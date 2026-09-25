@@ -3032,25 +3032,19 @@ function syncUIFromState() {
   syncDrumUI();
 }
 
-// ── Cloudflare Worker shortener (same approach as Melody Mixer) ──
-// The earlier version called TinyURL's anonymous API directly from the
-// browser, on the assumption that's what Melody Mixer did too - it isn't.
-// Melody Mixer holds a Bitly token server-side in a Cloudflare Worker
-// (melody-shortener.bcwaites.workers.dev) and never ships a key to the
-// client. This is that same pattern's sibling Worker for Grid Mixer -
-// same request/response contract (POST {url} -> {short}), same 8s
-// abort-timeout, same graceful fallback to the full (unshortened) link
-// with a status message rather than a dead "Generating..." state.
-// No Wix postMessage branch here (unlike Melody Mixer) - Grid Mixer isn't
-// embedded inline in Wix, it's linked/opened standalone, so there's no
-// parent page to hand the request to.
-const GRID_SHORTENER = "https://grid-shortener.bcwaites.workers.dev/";
+// ── Cloudflare Worker shortener (same pattern as Melody Mixer / Grid Mixer) ──
+// The Bitly token lives server-side in a Cloudflare Worker (stored as an
+// encrypted secret, BITLY_TOKEN) and is never shipped to the browser. This
+// is Tenor Mixer's own sibling Worker, tenor-shortener - same request/
+// response contract (POST {url} -> {short}), same 8s abort-timeout, same
+// graceful fallback to the full (unshortened) link with a status message.
+const TENOR_SHORTENER = "https://tenor-shortener.bcwaites.workers.dev/";
 
 async function shortenViaCloudflare(longUrl, inp, btn, sts) {
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 8000);
-    const res = await fetch(GRID_SHORTENER, {
+    const res = await fetch(TENOR_SHORTENER, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: longUrl }),
