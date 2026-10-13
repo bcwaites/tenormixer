@@ -2627,6 +2627,13 @@ let audioReadyPromise = null;
 // 6 voices per drum is ample headroom even for 32nds at top tempo).
 const VOICES_PER_DRUM = 6;
 
+// Fixed room reverb (no user control, per Bryan): a 0.9s room at a +6 dB
+// send - the old Room fader's "50" setting - which fills the silent gaps
+// the short samples leave between 16ths at ~100 BPM to about -26 dB under
+// the hits (measured offline) without clipping or burying the attacks.
+const ROOM_DECAY_SECONDS = 0.9;
+const ROOM_SEND_DB = 6;
+
 function faderToDb(v) {
   if (v <= 0) return -Infinity;
   return (v - 100) * 0.4; // 100 -> 0dB, 0 -> -40dB
@@ -2653,6 +2660,17 @@ function initSynths() {
     master: masterVol,
   };
 
+  // ROOM REVERB (stopgap for the short, trimmed samples): a parallel send
+  // off the drum bus. The dry drums still go straight to master untouched;
+  // a copy goes through a fixed-level send into a 100%-wet reverb, then a
+  // lowpass (so the tail is warm, not hissy) and back into master. Only the
+  // drum bus feeds it - the metronome click stays dry.
+  const reverb = new Tone.Reverb({ decay: ROOM_DECAY_SECONDS, preDelay: 0.008, wet: 1 });
+  const reverbTone = new Tone.Filter({ type: "lowpass", frequency: 4500, rolloff: -12 }).connect(masterVol);
+  reverb.connect(reverbTone);
+  const roomSend = new Tone.Volume(ROOM_SEND_DB).connect(reverb);
+  mixerNodes.stroke.connect(roomSend);
+
   metronomeSynth = new Tone.Synth({
     oscillator: { type: "square" },
     envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.01 },
@@ -2663,6 +2681,7 @@ function initSynths() {
     return sampleBuffers[key].load(TENOR_SAMPLE_DATA_URIS[key]);
   });
 
+  loads.push(reverb.ready); // the reverb's impulse response is generated asynchronously
   audioReadyPromise = Promise.all(loads).then(() => {
     drumVoicePools = {};
     Object.keys(SAMPLE_FOR_DRUM).forEach((drum) => {
