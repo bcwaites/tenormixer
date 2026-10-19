@@ -3057,7 +3057,7 @@ function syncUIFromState() {
 // is Tenor Mixer's own sibling Worker, tenor-shortener - same request/
 // response contract (POST {url} -> {short}), same 8s abort-timeout, same
 // graceful fallback to the full (unshortened) link with a status message.
-const TENOR_SHORTENER = "https://mw-links.bcwaites.workers.dev/";
+const TENOR_SHORTENER = "https://mw-links.drumsunlimited.workers.dev/";
 
 async function shortenViaCloudflare(longUrl, inp, btn, sts) {
   try {
