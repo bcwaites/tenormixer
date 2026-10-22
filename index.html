@@ -651,6 +651,72 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
     </div>
 
     <div class="acc-section">
+      <button class="acc-trigger" data-target="acc-crosses">
+        Crosses
+        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="acc-body" id="acc-crosses">
+        <div class="voice-toggle-row">
+          <span class="v-label">Add crosses</span>
+          <label class="switch"><input type="checkbox" id="crossToggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="crossDetailControl" class="controls-disabled">
+          <div class="field-label">Crossed notes</div>
+          <div class="radio-group" id="crossUnitGroup">
+            <div class="tog on" data-cross-unit="singles">Singles</div>
+            <div class="tog on" data-cross-unit="doubles">Doubles</div>
+          </div>
+          <div class="field-label">Cross positions (RH &middot; LH)</div>
+          <div class="radio-group" id="crossPairGroup"></div>
+          <div class="field-label" style="display:flex; justify-content:space-between;">
+            <span>How often</span>
+            <span id="crossDensityVal" style="color:#1A1A1A; font-weight:700;">30%</span>
+          </div>
+          <input type="range" id="crossDensitySlider" min="5" max="100" value="30" step="5" style="width:100%;">
+          <div class="field-hint" style="margin-top:8px;">The crossing hand plays a single or a double on the far drum while the other hand holds its drum on the notes either side. Crossed notes get an x above them. Drums 1&ndash;4 only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-section">
+      <button class="acc-trigger" data-target="acc-scrapes">
+        Scrapes
+        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="acc-body" id="acc-scrapes">
+        <div class="voice-toggle-row">
+          <span class="v-label">Add scrapes</span>
+          <label class="switch"><input type="checkbox" id="scrapeToggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="scrapeDetailControl" class="controls-disabled">
+          <div class="field-hint" id="scrapeNoDoublesNote" style="display:none; color:#B45309;">This sticking has no doubles, so there's nothing to scrape. Choose Doubles or a paradiddle sticking.</div>
+          <div class="field-label">Type</div>
+          <div class="radio-group" id="scrapeTypeGroup">
+            <div class="tog on" data-scrape-type="single">Single hand</div>
+            <div class="tog on" data-scrape-type="double">Double hand</div>
+          </div>
+          <div class="field-label">Directions</div>
+          <div class="radio-group" id="scrapeDirGroup">
+            <div class="tog on" data-scrape-dir="RH-OUT">RH Out</div>
+            <div class="tog on" data-scrape-dir="RH-IN">RH In</div>
+            <div class="tog on" data-scrape-dir="LH-OUT">LH Out</div>
+            <div class="tog on" data-scrape-dir="LH-IN">LH In</div>
+          </div>
+          <div class="voice-toggle-row" style="margin-top:8px;">
+            <span class="v-label">Include crossed scrapes</span>
+            <label class="switch"><input type="checkbox" id="scrapeCrossToggle"><span class="switch-track"></span></label>
+          </div>
+          <div class="field-label" style="display:flex; justify-content:space-between;">
+            <span>How often</span>
+            <span id="scrapeDensityVal" style="color:#1A1A1A; font-weight:700;">50%</span>
+          </div>
+          <input type="range" id="scrapeDensitySlider" min="5" max="100" value="50" step="5" style="width:100%;">
+          <div class="field-hint" style="margin-top:8px;">A scrape is a double (RR or LL) that moves to the next drum over in one motion. Out = toward the outside of the body (RH right, LH left); In = back toward the middle. Scrapes use the doubles already in the sticking. Drums 1&ndash;4 only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-section">
       <button class="acc-trigger" data-target="acc-structure">
         Structure
         <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -1155,6 +1221,276 @@ function assignDrums(steps, stepsPerMeasure, stepsPerBeat) {
   return steps;
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// CROSSES & SCRAPES (from Bryan's Crosses / Scrapes sheets)
+// Drums 1-4 only, left to right 4 - 2 - 1 - 3.
+//
+// CROSS: one hand reaches past the other for a single note or a double
+// (two notes in a row) on one drum, while the other hand holds its drum
+// on the notes either side - O H O or O H H O. Allowed positions are the
+// six pairs on the Crosses sheet (every pair with the RH left of the LH).
+//
+// SCRAPE: a double (RR or LL) moving to the next drum over in one motion.
+// OUT = toward the outside of the body (RH to the right, LH to the left),
+// IN = back toward the middle. Single-hand: the other hand holds one of
+// the sheet's listed drums on the notes either side. Double-hand: both
+// hands' doubles scrape back to back (either hand first), the other hand
+// holding a listed drum around each. Scrapes get no extra mark.
+//
+// A note played while the hands are crossed, by the hand that crossed
+// over, gets crossMark (an "x" above it). Every result is checked against
+// the whole piece: crossing is only allowed inside a cross or a crossed
+// scrape - everywhere else the hands stay uncrossed, as before.
+// ══════════════════════════════════════════════════════════════════════
+const CROSS_PAIRS = [["4", "2"], ["2", "1"], ["1", "3"], ["2", "3"], ["4", "1"], ["4", "3"]]; // [RH drum, LH drum]
+const crossPairId = (p) => "R" + p[0] + "L" + p[1];
+const ALL_CROSS_PAIR_IDS = CROSS_PAIRS.map(crossPairId);
+
+// Single-hand scrapes: [hand, direction, from, to,
+//   other hand's drums (no crosses), other hand's drums (with crosses)]
+const SINGLE_SCRAPES = [
+  ["R", "OUT", "4", "2", ["4"], ["1", "2", "3"]],
+  ["R", "OUT", "2", "1", ["4", "2"], ["1", "3"]],
+  ["R", "OUT", "1", "3", ["4", "2", "1"], []],
+  ["R", "IN", "2", "4", ["4"], ["3", "1", "2"]],
+  ["R", "IN", "1", "2", ["4", "2"], ["3", "1"]],
+  ["R", "IN", "3", "1", ["4", "2", "1"], ["3"]],
+  ["L", "OUT", "3", "1", ["3"], ["2", "4"]],
+  ["L", "OUT", "1", "2", ["3", "1"], ["4"]],
+  ["L", "OUT", "2", "4", ["3", "1", "2"], []],
+  ["L", "IN", "1", "3", ["3"], ["1", "2", "4"]],
+  ["L", "IN", "2", "1", ["3", "1"], ["2", "4"]],
+  ["L", "IN", "4", "2", ["3", "1", "2"], ["4"]],
+];
+// Double-hand scrapes: [RH from, RH to, LH from, LH to, with crosses?]
+// In three of the IN pairs the hands swap sides as they scrape (RH 2->4 +
+// LH 4->2, RH 1->2 + LH 2->1, RH 3->1 + LH 1->3). Per Bryan, passing during
+// a double-hand scrape isn't a cross: they're no-cross scrapes, no x, and
+// the first two are only listed once (here) rather than also as crossed.
+const DOUBLE_SCRAPES = [
+  // No crosses - both hands OUT
+  ["1", "3", "2", "4", false], ["1", "3", "1", "2", false], ["1", "3", "3", "1", false],
+  ["2", "1", "2", "4", false], ["2", "1", "1", "2", false], ["4", "2", "2", "4", false],
+  // No crosses - both hands IN
+  ["2", "4", "4", "2", false], ["1", "2", "4", "2", false], ["1", "2", "2", "1", false],
+  ["3", "1", "4", "2", false], ["3", "1", "2", "1", false], ["3", "1", "1", "3", false],
+  // With crosses - OUT (RH 4->2 pairs with LH OUT 1->2 and 3->1, per Bryan)
+  ["2", "1", "3", "1", true], ["4", "2", "1", "2", true], ["4", "2", "3", "1", true],
+  // With crosses - IN
+  ["2", "4", "2", "1", true], ["2", "4", "1", "3", true], ["1", "2", "1", "3", true],
+];
+const ALL_SCRAPE_DIRS = ["RH-OUT", "RH-IN", "LH-OUT", "LH-IN"];
+const scrapeDirOf = (from, to) => (DRUMS[to].x > DRUMS[from].x ? "right" : "left");
+// RH OUT / LH IN move right; RH IN / LH OUT move left.
+const scrapeDirId = (hand, from, to) => {
+  const right = scrapeDirOf(from, to) === "right";
+  return hand === "R" ? (right ? "RH-OUT" : "RH-IN") : (right ? "LH-IN" : "LH-OUT");
+};
+// The other hand's drums around a single-hand scrape, from the sheet.
+function scrapeHoldDrums(hand, from, to, withCrosses) {
+  const row = SINGLE_SCRAPES.find((r) => r[0] === hand && r[2] === from && r[3] === to);
+  if (!row) return [];
+  return withCrosses ? row[4].concat(row[5].filter((d) => !row[4].includes(d))) : row[4].slice();
+}
+
+function shuffled(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+  return a;
+}
+
+// Every stroke in playing order, grace notes included - a flam's grace is
+// played by the other hand and moves it, exactly as assignDrums tracks it.
+function strokeTimeline(steps) {
+  const tl = [];
+  steps.forEach((step) => {
+    if (step.specialContinuation) return;
+    const list = step.special && step.specialNotes ? step.specialNotes : [step];
+    list.forEach((n) => {
+      if (n.ornament === "flam" && n.hand && n.graceDrum) tl.push({ grace: true, hand: opposite(n.hand), get drum() { return n.graceDrum; } });
+      tl.push({ ref: n, plain: !(step.special && step.specialNotes) });
+    });
+  });
+  return tl;
+}
+
+// Calls fn(note, crossed) for each main note in order.
+function walkCrossings(tl, fn) {
+  const at = { L: "2", R: "1" };
+  for (const ev of tl) {
+    if (ev.grace) { at[ev.hand] = ev.drum; continue; }
+    const n = ev.ref;
+    if (!n.hand || !n.drum) { if (fn(n, false) === false) return false; continue; }
+    if (fn(n, crossesOver(n.hand, n.drum, at[opposite(n.hand)])) === false) return false;
+    at[n.hand] = n.drum;
+  }
+  return true;
+}
+
+// False if the hands cross anywhere they're not allowed to: crossing is
+// fine inside a cross / crossed-scrape window, and wherever the plain drum
+// path already put it (e.g. a same-drum flam's grace overlapping for an
+// instant) - the new pass never adds crossings anywhere else.
+function crossingsAllowed(tl, baseCrossed) {
+  return walkCrossings(tl, (n, crossed) => !(crossed && !n._xok && !(baseCrossed && baseCrossed.has(n))));
+}
+
+// Marks the notes of the hand that crossed over, for as long as the hands
+// stay crossed - only inside a cross or crossed scrape (notes carrying
+// _xok); passing during a no-cross double scrape is never marked.
+function markCrossedNotes(tl) {
+  let crossingHand = null;
+  walkCrossings(tl, (n, crossed) => {
+    n.crossMark = false;
+    if (!n.hand) return;
+    if (!crossed || n._noMark) { crossingHand = null; return; }
+    if (!crossingHand) crossingHand = n.hand;
+    n.crossMark = n.hand === crossingHand && !!n._xok;
+  });
+}
+
+function applyCrossesAndScrapes(steps) {
+  applyCrossesAndScrapes.lastPlacements = [];
+  applyCrossesAndScrapes.baseCrossed = [];
+  if (!state.crossEnabled && !state.scrapeEnabled) return steps;
+  const tl = strokeTimeline(steps);
+  // Notes the drum path already has crossed (kept exactly as they were).
+  const baseCrossed = new Set();
+  walkCrossings(tl, (n, crossed) => { if (crossed) baseCrossed.add(n); });
+  // Main notes in order, with what each one may become.
+  const notes = tl.filter((ev) => !ev.grace).map((ev) => ev.ref);
+  const isPlain = new Set(tl.filter((ev) => !ev.grace && ev.plain).map((ev) => ev.ref));
+  const locked = new Set();
+  // What got placed, by note index - kept on the function for checking.
+  const placements = [];
+  applyCrossesAndScrapes.lastPlacements = placements;
+  // A note a cross/scrape may re-voice: a plain grid step (not inside a
+  // tuplet rudiment), not already used, never a flam (its grace would move
+  // the other hand). Scrape strokes also can't be diddles.
+  const canHold = (n) => n && isPlain.has(n) && !locked.has(n) && n.ornament !== "flam" && !!n.hand;
+  const canScrape = (n) => canHold(n) && !n.ornament;
+  const handAt = (k) => (notes[k] ? notes[k].hand : null);
+  // Length of the same-hand run starting at k, if k starts a run.
+  const runAt = (k) => {
+    const h = handAt(k);
+    if (!h || handAt(k - 1) === h) return 0;
+    let len = 1;
+    while (handAt(k + len) === h) len++;
+    return len;
+  };
+
+  // Try a set of drum changes; keep them only if the whole piece stays legal.
+  // `passNotes`: strokes that may pass the other hand without it counting
+  // as a cross (no x) - the scrape strokes of a no-cross double-hand scrape.
+  const tryPlace = (changes, windowNotes, crossOK, check, passNotes) => {
+    const saved = changes.map(([n]) => [n, n.drum]);
+    changes.forEach(([n, d]) => { n.drum = d; });
+    windowNotes.forEach((n) => { n._xok = crossOK; });
+    (passNotes || []).forEach((n) => { n._xok = true; n._noMark = true; });
+    if (crossingsAllowed(tl, baseCrossed) && (!check || check())) {
+      windowNotes.forEach((n) => locked.add(n));
+      return true;
+    }
+    saved.forEach(([n, d]) => { n.drum = d; });
+    windowNotes.concat(passNotes || []).forEach((n) => { delete n._xok; delete n._noMark; });
+    return false;
+  };
+
+  // ── Scrapes ──
+  if (state.scrapeEnabled) {
+    for (let k = 0; k < notes.length; k++) {
+      if (runAt(k) !== 2) continue;
+      if (Math.random() * 100 >= state.scrapeDensity) continue;
+      const H = handAt(k), O = opposite(H);
+      const a = notes[k], b = notes[k + 1];
+      if (!canScrape(a) || !canScrape(b)) continue;
+      const before = notes[k - 1] || null;
+      if (before && !canHold(before)) continue;
+      const options = [];
+      // Single-hand: O H H O
+      if (state.scrapeSingle) {
+        const after = notes[k + 2] || null;
+        if (!after || canHold(after)) {
+          SINGLE_SCRAPES.forEach((r) => {
+            if (r[0] !== H || !state.scrapeDirs.has(scrapeDirId(H, r[2], r[3]))) return;
+            const holds = scrapeHoldDrums(H, r[2], r[3], state.scrapeCrosses);
+            const crossHolds = state.scrapeCrosses ? r[5] : [];
+            shuffled(holds).forEach((hd) => options.push(() => {
+              const crossed = crossHolds.includes(hd) && !r[4].includes(hd);
+              const ch = [[a, r[2]], [b, r[3]]];
+              const win = [a, b];
+              [before, after].forEach((n) => { if (n) { ch.push([n, hd]); win.push(n); } });
+              const ok = tryPlace(ch, win, crossed);
+              if (ok) placements.push({ kind: "scrape1", at: k, hand: H, from: r[2], to: r[3], hold: hd, crossed });
+              return ok;
+            }));
+          });
+        }
+      }
+      // Double-hand: O? H H O O H? (both doubles scrape)
+      if (state.scrapeDouble && runAt(k + 2) === 2) {
+        const c = notes[k + 2], d = notes[k + 3], after = notes[k + 4] || null;
+        if (canScrape(c) && canScrape(d) && (!after || canHold(after))) {
+          DOUBLE_SCRAPES.forEach((p) => {
+            if (p[4] && !state.scrapeCrosses) return;
+            const [hFrom, hTo, oFrom, oTo] = H === "R" ? p : [p[2], p[3], p[0], p[1]];
+            if (!state.scrapeDirs.has(scrapeDirId(H, hFrom, hTo)) || !state.scrapeDirs.has(scrapeDirId(O, oFrom, oTo))) return;
+            // Other hand before: a drum it may hold during H's scrape -
+            // ideally already where its own scrape starts. H after: a drum
+            // it may hold during O's scrape - ideally where it ended.
+            const preferFirst = (list, want) => (list.includes(want) ? [want].concat(shuffled(list.filter((x) => x !== want))) : shuffled(list));
+            const oHolds = before ? preferFirst(scrapeHoldDrums(H, hFrom, hTo, p[4]), oFrom) : [null];
+            const hHolds = after ? preferFirst(scrapeHoldDrums(O, oFrom, oTo, p[4]), hTo) : [null];
+            options.push(() => {
+              for (const oh of oHolds) for (const hh of hHolds) {
+                const ch = [[a, hFrom], [b, hTo], [c, oFrom], [d, oTo]];
+                const win = [a, b, c, d];
+                if (before) { ch.push([before, oh]); win.push(before); }
+                if (after) { ch.push([after, hh]); win.push(after); }
+                if (tryPlace(ch, win, p[4], null, p[4] ? null : [a, b, c, d])) {
+                  placements.push({ kind: "scrape2", at: k, first: H, hFrom, hTo, oFrom, oTo, oHold: oh, hHold: hh, crossed: p[4] });
+                  return true;
+                }
+              }
+              return false;
+            });
+          });
+        }
+      }
+      for (const place of shuffled(options)) if (place()) break;
+    }
+  }
+
+  // ── Crosses ──
+  if (state.crossEnabled) {
+    const pairs = CROSS_PAIRS.filter((p) => state.crossPairs.has(crossPairId(p)));
+    for (let k = 0; k < notes.length; k++) {
+      const len = runAt(k);
+      if (!((len === 1 && state.crossSingles) || (len === 2 && state.crossDoubles))) continue;
+      if (Math.random() * 100 >= state.crossDensity) continue;
+      const H = handAt(k);
+      const unit = notes.slice(k, k + len);
+      if (!unit.every(canHold)) continue;
+      const before = notes[k - 1] || null, after = notes[k + len] || null;
+      if ((before && !canHold(before)) || (after && !canHold(after))) continue;
+      for (const p of shuffled(pairs)) {
+        const hDrum = H === "R" ? p[0] : p[1], oDrum = H === "R" ? p[1] : p[0];
+        const ch = unit.map((n) => [n, hDrum]);
+        const win = unit.slice();
+        [before, after].forEach((n) => { if (n) { ch.push([n, oDrum]); win.push(n); } });
+        // The hand in the unit has to be the one that crosses over.
+        const check = () => { markCrossedNotes(tl); return unit.every((n) => n.crossMark) && !(before && before.crossMark); };
+        if (tryPlace(ch, win, true, check)) { placements.push({ kind: "cross", at: k, hand: H, len, hDrum, oDrum }); break; }
+      }
+    }
+  }
+
+  markCrossedNotes(tl);
+  applyCrossesAndScrapes.baseCrossed = notes.map((n, i) => (baseCrossed.has(n) ? i : -1)).filter((i) => i >= 0);
+  notes.forEach((n) => { delete n._xok; delete n._noMark; });
+  return steps;
+}
+
 function unpitchedXml(drum) {
   const d = DRUMS[drum] || DRUMS[RELEASE_DRUM];
   return "        <unpitched>\n          <display-step>" + d.step + "</display-step>\n          <display-octave>" + d.oct + "</display-octave>\n        </unpitched>\n";
@@ -1335,6 +1671,21 @@ const state = {
   singleDrum: "1",
   customDrums: null,       // drum label per measure position, built lazily
   flamVoicing: "same",     // same | split | mixed
+
+  // Crosses (drums 1-4)
+  crossEnabled: false,
+  crossDensity: 30,        // % of eligible singles/doubles that cross
+  crossSingles: true,
+  crossDoubles: true,
+  crossPairs: new Set(ALL_CROSS_PAIR_IDS),
+
+  // Scrapes (drums 1-4)
+  scrapeEnabled: false,
+  scrapeDensity: 50,       // % of doubles that scrape
+  scrapeSingle: true,      // one hand scrapes, the other holds
+  scrapeDouble: true,      // both hands' doubles scrape back to back
+  scrapeCrosses: false,    // also use the sheet's crossed scrapes
+  scrapeDirs: new Set(ALL_SCRAPE_DIRS),
 };
 
 function ensureCustomSticking() {
@@ -1467,7 +1818,7 @@ function generateGridSteps() {
     }
   }
   const withRudiments = insertRandomRudiment(steps, stepsPerMeasure, stepsPerBeat);
-  return stripAccentsFromDiddles(assignDrums(withRudiments, stepsPerMeasure, stepsPerBeat));
+  return stripAccentsFromDiddles(applyCrossesAndScrapes(assignDrums(withRudiments, stepsPerMeasure, stepsPerBeat)));
 }
 
 // RULE (for now, per Bryan): a diddle never carries an accent. When a note
@@ -1772,6 +2123,11 @@ function buildNoteXml(step, opts) {
   // where a tie is meaningless, so it's slurred into the main note instead.
   const graceDrum = step.graceDrum || step.drum;
   const graceTied = graceDrum === step.drum;
+  // Crossed note: a small "x" above it (Bryan). Written as a text direction
+  // so the renderer stacks it clear of accents, beams and tuplet numbers.
+  if (step.crossMark) {
+    xml += "      <direction placement=\"above\">\n        <direction-type>\n          <words font-size=\"11\" font-weight=\"bold\">x</words>\n        </direction-type>\n      </direction>\n";
+  }
   if (step.ornament === "flam") {
     xml += "      <note>\n";
     xml += "        <grace slash=\"yes\"/>\n";
@@ -2174,6 +2530,10 @@ function initOSMD() {
     setWantedStemDirectionByXml: true,
   });
   installBeamRenderPatch();
+  // Every render - including the renderer's own resize on a computer -
+  // gets the crossed-note marks tidied (see liftCrossMarks).
+  const baseRender = osmd.render.bind(osmd);
+  osmd.render = function () { const r = baseRender(); liftCrossMarks(); return r; };
   osmd.EngravingRules.PercussionOneLineCutoff = 0;
   osmd.EngravingRules.PercussionForceVoicesOneLineCutoff = 0;
   osmd.EngravingRules.FlatBeams = true;
@@ -2221,6 +2581,46 @@ function initOSMD() {
 // this walks note-by-note and skips any note carrying its own <g
 // class="vf-flag"> (the reliable marker of a grace note - real beamed
 // notes never have one), rather than relying on shape alone.
+// Crossed-note "x" marks. The renderer draws each text mark twice and
+// doesn't stack it above accents or tuplet numbers, so after every render:
+// keep one copy, then lift it just clear of whatever sits in its column.
+// Does nothing when there are no crosses.
+function liftCrossMarks() {
+  const svg = document.querySelector("#osmd-container svg");
+  if (!svg) return;
+  const marks = [];
+  const seen = new Set();
+  svg.querySelectorAll("g.vf-text text").forEach((t) => {
+    if (t.textContent.trim() !== "x") return;
+    const key = t.getAttribute("x") + "," + t.getAttribute("y");
+    if (seen.has(key)) { t.remove(); return; }
+    seen.add(key);
+    marks.push(t);
+  });
+  if (!marks.length) return;
+  const obstacles = [];
+  svg.querySelectorAll("path, text").forEach((el) => {
+    if (marks.includes(el)) return;
+    let b; try { b = el.getBBox(); } catch (e) { return; }
+    if (b.width || b.height) obstacles.push(b);
+  });
+  marks.forEach((t) => {
+    const b = t.getBBox();
+    const fs = parseFloat(t.getAttribute("font-size")) || 20;
+    const base = parseFloat(t.getAttribute("y"));
+    const top = base - 0.5 * fs, bottom = base + 1;      // the "x" glyph itself, not the font's line box
+    const left = b.x - 1, right = b.x + b.width + 1;
+    const column = obstacles.filter((o) => o.x < right && o.x + o.width > left && o.y + o.height > top - 80 && o.y < bottom + 60);
+    let shift = 0;
+    for (let guard = 0; guard < 10; guard++) {
+      const hit = column.find((o) => o.y < bottom + shift + 2 && o.y + o.height > top + shift - 2);
+      if (!hit) break;
+      shift = hit.y - 3 - bottom;
+    }
+    if (shift) t.setAttribute("transform", "translate(0, " + shift.toFixed(2) + ")");
+  });
+}
+
 function repositionDragMarks() {
   const container = document.getElementById("osmd-container");
   if (!container) return;
@@ -2740,6 +3140,81 @@ document.querySelectorAll("#flamVoicingGroup .tog").forEach((btn) => {
     syncDrumUI();
   });
 });
+
+// ── Crosses & Scrapes ──
+// Multi-select chips: each click flips one option; at least one stays on.
+function stickingHasDoubles() {
+  const c = getStickingCycle();
+  return c.some((h, i) => h === c[(i + 1) % c.length]) || state.rudimentsEnabled;
+}
+function syncCrossScrapeUI() {
+  document.getElementById("crossToggle").checked = state.crossEnabled;
+  document.getElementById("crossDetailControl").classList.toggle("controls-disabled", !state.crossEnabled);
+  document.querySelectorAll("#crossUnitGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.crossUnit === "singles" ? state.crossSingles : state.crossDoubles));
+  const pg = document.getElementById("crossPairGroup");
+  pg.innerHTML = "";
+  CROSS_PAIRS.forEach((p) => {
+    const id = crossPairId(p);
+    const t = document.createElement("div");
+    t.className = "tog" + (state.crossPairs.has(id) ? " on" : "");
+    t.textContent = "R" + p[0] + " \u00b7 L" + p[1];
+    t.title = "RH on drum " + p[0] + ", LH on drum " + p[1];
+    t.addEventListener("click", () => {
+      if (state.crossPairs.has(id)) { if (state.crossPairs.size > 1) state.crossPairs.delete(id); }
+      else state.crossPairs.add(id);
+      syncCrossScrapeUI(); generateAndRender();
+    });
+    pg.appendChild(t);
+  });
+  document.getElementById("crossDensitySlider").value = state.crossDensity;
+  document.getElementById("crossDensityVal").textContent = state.crossDensity + "%";
+
+  document.getElementById("scrapeToggle").checked = state.scrapeEnabled;
+  document.getElementById("scrapeDetailControl").classList.toggle("controls-disabled", !state.scrapeEnabled);
+  document.getElementById("scrapeNoDoublesNote").style.display = state.scrapeEnabled && !stickingHasDoubles() ? "block" : "none";
+  document.querySelectorAll("#scrapeTypeGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.scrapeType === "single" ? state.scrapeSingle : state.scrapeDouble));
+  document.querySelectorAll("#scrapeDirGroup .tog").forEach((b) => b.classList.toggle("on", state.scrapeDirs.has(b.dataset.scrapeDir)));
+  document.getElementById("scrapeCrossToggle").checked = state.scrapeCrosses;
+  document.getElementById("scrapeDensitySlider").value = state.scrapeDensity;
+  document.getElementById("scrapeDensityVal").textContent = state.scrapeDensity + "%";
+}
+document.getElementById("crossToggle").addEventListener("change", (e) => { state.crossEnabled = e.target.checked; syncCrossScrapeUI(); generateAndRender(); });
+document.querySelectorAll("#crossUnitGroup .tog").forEach((b) => b.addEventListener("click", () => {
+  const key = b.dataset.crossUnit === "singles" ? "crossSingles" : "crossDoubles";
+  const otherKey = key === "crossSingles" ? "crossDoubles" : "crossSingles";
+  if (state[key] && !state[otherKey]) return; // keep at least one on
+  state[key] = !state[key];
+  syncCrossScrapeUI(); generateAndRender();
+}));
+document.getElementById("crossDensitySlider").addEventListener("input", (e) => {
+  state.crossDensity = parseInt(e.target.value, 10);
+  document.getElementById("crossDensityVal").textContent = state.crossDensity + "%";
+});
+document.getElementById("crossDensitySlider").addEventListener("change", () => generateAndRender());
+document.getElementById("scrapeToggle").addEventListener("change", (e) => { state.scrapeEnabled = e.target.checked; syncCrossScrapeUI(); generateAndRender(); });
+document.querySelectorAll("#scrapeTypeGroup .tog").forEach((b) => b.addEventListener("click", () => {
+  const key = b.dataset.scrapeType === "single" ? "scrapeSingle" : "scrapeDouble";
+  const otherKey = key === "scrapeSingle" ? "scrapeDouble" : "scrapeSingle";
+  if (state[key] && !state[otherKey]) return;
+  state[key] = !state[key];
+  syncCrossScrapeUI(); generateAndRender();
+}));
+document.querySelectorAll("#scrapeDirGroup .tog").forEach((b) => b.addEventListener("click", () => {
+  const id = b.dataset.scrapeDir;
+  if (state.scrapeDirs.has(id)) { if (state.scrapeDirs.size > 1) state.scrapeDirs.delete(id); }
+  else state.scrapeDirs.add(id);
+  syncCrossScrapeUI(); generateAndRender();
+}));
+document.getElementById("scrapeCrossToggle").addEventListener("change", (e) => { state.scrapeCrosses = e.target.checked; generateAndRender(); });
+document.getElementById("scrapeDensitySlider").addEventListener("input", (e) => {
+  state.scrapeDensity = parseInt(e.target.value, 10);
+  document.getElementById("scrapeDensityVal").textContent = state.scrapeDensity + "%";
+});
+document.getElementById("scrapeDensitySlider").addEventListener("change", () => generateAndRender());
+// The "no doubles" note follows the sticking.
+document.getElementById("stickingGroup").addEventListener("click", () => setTimeout(syncCrossScrapeUI, 0));
+document.getElementById("acc-sticking").addEventListener("click", () => setTimeout(syncCrossScrapeUI, 0));
+document.getElementById("rudimentsToggle").addEventListener("change", () => setTimeout(syncCrossScrapeUI, 0));
 
 // ── Subdivision toggle ──
 document.querySelectorAll("#subdivisionGroup .tog").forEach((btn) => {
@@ -3299,6 +3774,17 @@ function serializeSettings() {
     singleDrum: state.singleDrum,
     customDrums: state.customDrums,
     flamVoicing: state.flamVoicing,
+    crossEnabled: state.crossEnabled,
+    crossDensity: state.crossDensity,
+    crossSingles: state.crossSingles,
+    crossDoubles: state.crossDoubles,
+    crossPairs: Array.from(state.crossPairs),
+    scrapeEnabled: state.scrapeEnabled,
+    scrapeDensity: state.scrapeDensity,
+    scrapeSingle: state.scrapeSingle,
+    scrapeDouble: state.scrapeDouble,
+    scrapeCrosses: state.scrapeCrosses,
+    scrapeDirs: Array.from(state.scrapeDirs),
   };
 }
 
@@ -3318,6 +3804,24 @@ function restoreSettingsFromUrl() {
     state.flamEligible = new Set(s.flamEligible || []);
     state.dragEligible = new Set(s.dragEligible || []);
     state.rudimentPool = new Set(s.rudimentPool || RUDIMENT_LIBRARY.map((r) => r.id));
+    // Crosses & scrapes: checked against what the app can use (links made
+    // before this feature simply leave them at their defaults).
+    const bool = (v, d) => (typeof v === "boolean" ? v : d);
+    const pct = (v, d) => (Number.isInteger(v) && v >= 5 && v <= 100 ? v : d);
+    const pick = (v, all, d) => { const ok = Array.isArray(v) ? v.filter((x) => all.includes(x)) : []; return new Set(ok.length ? ok : d); };
+    state.crossEnabled = bool(s.crossEnabled, false);
+    state.crossDensity = pct(s.crossDensity, 30);
+    state.crossSingles = bool(s.crossSingles, true);
+    state.crossDoubles = bool(s.crossDoubles, true);
+    if (!state.crossSingles && !state.crossDoubles) state.crossSingles = state.crossDoubles = true;
+    state.crossPairs = pick(s.crossPairs, ALL_CROSS_PAIR_IDS, ALL_CROSS_PAIR_IDS);
+    state.scrapeEnabled = bool(s.scrapeEnabled, false);
+    state.scrapeDensity = pct(s.scrapeDensity, 50);
+    state.scrapeSingle = bool(s.scrapeSingle, true);
+    state.scrapeDouble = bool(s.scrapeDouble, true);
+    if (!state.scrapeSingle && !state.scrapeDouble) state.scrapeSingle = state.scrapeDouble = true;
+    state.scrapeCrosses = bool(s.scrapeCrosses, false);
+    state.scrapeDirs = pick(s.scrapeDirs, ALL_SCRAPE_DIRS, ALL_SCRAPE_DIRS);
     return true;
   } catch (err) {
     console.error("Failed to parse shared settings:", err);
@@ -3365,6 +3869,7 @@ function syncUIFromState() {
 
   renderAllPositionGrids();
   syncDrumUI();
+  syncCrossScrapeUI();
 }
 
 // ── Cloudflare Worker shortener (same pattern as Melody Mixer / Grid Mixer) ──
