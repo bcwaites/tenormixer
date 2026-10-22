@@ -651,72 +651,6 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
     </div>
 
     <div class="acc-section">
-      <button class="acc-trigger" data-target="acc-crosses">
-        Crosses
-        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <div class="acc-body" id="acc-crosses">
-        <div class="voice-toggle-row">
-          <span class="v-label">Add crosses</span>
-          <label class="switch"><input type="checkbox" id="crossToggle"><span class="switch-track"></span></label>
-        </div>
-        <div id="crossDetailControl" class="controls-disabled">
-          <div class="field-label">Crossed notes</div>
-          <div class="radio-group" id="crossUnitGroup">
-            <div class="tog on" data-cross-unit="singles">Singles</div>
-            <div class="tog on" data-cross-unit="doubles">Doubles</div>
-          </div>
-          <div class="field-label">Cross positions (RH &middot; LH)</div>
-          <div class="radio-group" id="crossPairGroup"></div>
-          <div class="field-label" style="display:flex; justify-content:space-between;">
-            <span>How often</span>
-            <span id="crossDensityVal" style="color:#1A1A1A; font-weight:700;">30%</span>
-          </div>
-          <input type="range" id="crossDensitySlider" min="5" max="100" value="30" step="5" style="width:100%;">
-          <div class="field-hint" style="margin-top:8px;">The crossing hand plays a single or a double on the far drum while the other hand holds its drum on the notes either side. Crossed notes get an x above them. Drums 1&ndash;4 only.</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="acc-section">
-      <button class="acc-trigger" data-target="acc-scrapes">
-        Scrapes
-        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <div class="acc-body" id="acc-scrapes">
-        <div class="voice-toggle-row">
-          <span class="v-label">Add scrapes</span>
-          <label class="switch"><input type="checkbox" id="scrapeToggle"><span class="switch-track"></span></label>
-        </div>
-        <div id="scrapeDetailControl" class="controls-disabled">
-          <div class="field-hint" id="scrapeNoDoublesNote" style="display:none; color:#B45309;">This sticking has no doubles, so there's nothing to scrape. Choose Doubles or a paradiddle sticking.</div>
-          <div class="field-label">Type</div>
-          <div class="radio-group" id="scrapeTypeGroup">
-            <div class="tog on" data-scrape-type="single">Single hand</div>
-            <div class="tog on" data-scrape-type="double">Double hand</div>
-          </div>
-          <div class="field-label">Directions</div>
-          <div class="radio-group" id="scrapeDirGroup">
-            <div class="tog on" data-scrape-dir="RH-OUT">RH Out</div>
-            <div class="tog on" data-scrape-dir="RH-IN">RH In</div>
-            <div class="tog on" data-scrape-dir="LH-OUT">LH Out</div>
-            <div class="tog on" data-scrape-dir="LH-IN">LH In</div>
-          </div>
-          <div class="voice-toggle-row" style="margin-top:8px;">
-            <span class="v-label">Include crossed scrapes</span>
-            <label class="switch"><input type="checkbox" id="scrapeCrossToggle"><span class="switch-track"></span></label>
-          </div>
-          <div class="field-label" style="display:flex; justify-content:space-between;">
-            <span>How often</span>
-            <span id="scrapeDensityVal" style="color:#1A1A1A; font-weight:700;">50%</span>
-          </div>
-          <input type="range" id="scrapeDensitySlider" min="5" max="100" value="50" step="5" style="width:100%;">
-          <div class="field-hint" style="margin-top:8px;">A scrape is a double (RR or LL) that moves to the next drum over in one motion. Out = toward the outside of the body (RH right, LH left); In = back toward the middle. Scrapes use the doubles already in the sticking. Drums 1&ndash;4 only.</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="acc-section">
       <button class="acc-trigger" data-target="acc-structure">
         Structure
         <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -807,6 +741,72 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
     </div>
 
     <div class="acc-section">
+      <button class="acc-trigger" data-target="acc-crosses">
+        Crosses
+        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="acc-body" id="acc-crosses">
+        <div class="voice-toggle-row">
+          <span class="v-label">Add crosses</span>
+          <label class="switch"><input type="checkbox" id="crossToggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="crossDetailControl" class="controls-disabled">
+          <div class="field-label">Crossed notes</div>
+          <div class="radio-group" id="crossUnitGroup">
+            <div class="tog on" data-cross-unit="singles">Singles</div>
+            <div class="tog on" data-cross-unit="doubles">Doubles</div>
+          </div>
+          <div class="field-label">Cross positions (RH &middot; LH)</div>
+          <div class="radio-group" id="crossPairGroup"></div>
+          <div class="field-label" style="display:flex; justify-content:space-between;">
+            <span>How often</span>
+            <span id="crossDensityVal" style="color:#1A1A1A; font-weight:700;">30%</span>
+          </div>
+          <input type="range" id="crossDensitySlider" min="5" max="100" value="30" step="5" style="width:100%;">
+          <div class="field-hint" style="margin-top:8px;">The crossing hand plays a single or a double on the far drum while the other hand holds its drum on the notes either side. Crossed notes get an x above them. Drums 1&ndash;4 only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-section">
+      <button class="acc-trigger" data-target="acc-scrapes">
+        Scrapes
+        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="acc-body" id="acc-scrapes">
+        <div class="voice-toggle-row">
+          <span class="v-label">Add scrapes</span>
+          <label class="switch"><input type="checkbox" id="scrapeToggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="scrapeDetailControl" class="controls-disabled">
+          <div class="field-hint" id="scrapeNoDoublesNote" style="display:none; color:#B45309;">This sticking has no doubles, so there's nothing to scrape. Choose Doubles or a paradiddle sticking.</div>
+          <div class="field-label">Type</div>
+          <div class="radio-group" id="scrapeTypeGroup">
+            <div class="tog on" data-scrape-type="single">Single hand</div>
+            <div class="tog on" data-scrape-type="double">Double hand</div>
+          </div>
+          <div class="field-label">Directions</div>
+          <div class="radio-group" id="scrapeDirGroup">
+            <div class="tog on" data-scrape-dir="RH-OUT">RH Out</div>
+            <div class="tog on" data-scrape-dir="RH-IN">RH In</div>
+            <div class="tog on" data-scrape-dir="LH-OUT">LH Out</div>
+            <div class="tog on" data-scrape-dir="LH-IN">LH In</div>
+          </div>
+          <div class="voice-toggle-row" style="margin-top:8px;">
+            <span class="v-label">Include crossed scrapes</span>
+            <label class="switch"><input type="checkbox" id="scrapeCrossToggle"><span class="switch-track"></span></label>
+          </div>
+          <div class="field-label" style="display:flex; justify-content:space-between;">
+            <span>How often</span>
+            <span id="scrapeDensityVal" style="color:#1A1A1A; font-weight:700;">50%</span>
+          </div>
+          <input type="range" id="scrapeDensitySlider" min="5" max="100" value="50" step="5" style="width:100%;">
+          <div class="field-hint" style="margin-top:8px;">A scrape is a double (RR or LL) that moves to the next drum over in one motion. Out = toward the outside of the body (RH right, LH left); In = back toward the middle. Scrapes use the doubles already in the sticking. Drums 1&ndash;4 only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-section">
       <button class="acc-trigger" data-target="acc-flam">
         Flams
         <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
@@ -853,7 +853,7 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
 
     <div class="acc-section">
       <button class="acc-trigger" data-target="acc-drag">
-        Drags / Diddles
+        Diddles
         <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="acc-body" id="acc-drag">
