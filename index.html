@@ -763,7 +763,7 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
             <span id="crossDensityVal" style="color:#1A1A1A; font-weight:700;">30%</span>
           </div>
           <input type="range" id="crossDensitySlider" min="5" max="100" value="30" step="5" style="width:100%;">
-          <div class="field-hint" style="margin-top:8px;">The crossing hand plays a single or a double on the far drum while the other hand holds its drum on the notes either side. Crossed notes get an x above them. Drums 1&ndash;4 only.</div>
+          <div class="field-hint" style="margin-top:8px;">The crossing hand plays a single or a double (RR or LL) on the far drum while the other hand holds its drum on the notes either side. With any sticking: where there's no double, the notes around a crossed double are re-stuck to fit. Crossed notes get an x above them. Drums 1&ndash;4 only.</div>
         </div>
       </div>
     </div>
@@ -779,7 +779,6 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
           <label class="switch"><input type="checkbox" id="scrapeToggle"><span class="switch-track"></span></label>
         </div>
         <div id="scrapeDetailControl" class="controls-disabled">
-          <div class="field-hint" id="scrapeNoDoublesNote" style="display:none; color:#B45309;">This sticking has no doubles, so there's nothing to scrape. Choose Doubles or a paradiddle sticking.</div>
           <div class="field-label">Type</div>
           <div class="radio-group" id="scrapeTypeGroup">
             <div class="tog on" data-scrape-type="single">Single hand</div>
@@ -801,7 +800,7 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
             <span id="scrapeDensityVal" style="color:#1A1A1A; font-weight:700;">50%</span>
           </div>
           <input type="range" id="scrapeDensitySlider" min="5" max="100" value="50" step="5" style="width:100%;">
-          <div class="field-hint" style="margin-top:8px;">A scrape is a double (RR or LL) that moves to the next drum over in one motion. Out = toward the outside of the body (RH right, LH left); In = back toward the middle. Scrapes use the doubles already in the sticking. Drums 1&ndash;4 only.</div>
+          <div class="field-hint" style="margin-top:8px;">A scrape is a double that moves to the next drum over in one motion: RR for RH In/Out, LL for LH In/Out, with any sticking. Out = toward the outside of the body (RH right, LH left); In = back toward the middle. Doubles already in the sticking are used as they are; in single strokes, the notes around a scrape are re-stuck to fit. Drums 1&ndash;4, next drum over only.</div>
         </div>
       </div>
     </div>
@@ -1349,138 +1348,211 @@ function markCrossedNotes(tl) {
   });
 }
 
+// Doubles move only to the next drum over (Bryan): a double - two notes
+// in a row by one hand, scraped or not - stays on its drum or moves 4-2,
+// 2-1 or 1-3. Never 3-4, 2-3 or 1-4. Moves onto or off a spock aren't
+// covered by the rule.
+const NEXT_DRUMS = { "4": ["2"], "2": ["4", "1"], "1": ["2", "3"], "3": ["1"] };
+function doubleMoveOk(a, b) {
+  return a === b || !NEXT_DRUMS[a] || !NEXT_DRUMS[b] || NEXT_DRUMS[a].includes(b);
+}
+
+// Runs after the drum path. Always: fixes doubles that jump past the next
+// drum. Then, when on, places scrapes and crosses.
+//
+// Scrapes are always doubles - RR for RH In/Out, LL for LH In/Out - and so
+// are crossed doubles, whatever the sticking. Where the sticking has single
+// strokes, just the notes around the scrape / cross are re-stuck to fit
+// (O H H O); doubles already in the sticking are used as they are, never
+// broken up. Rudiment notes are never re-stuck, and no run of three
+// same-hand notes is ever made.
 function applyCrossesAndScrapes(steps) {
   applyCrossesAndScrapes.lastPlacements = [];
   applyCrossesAndScrapes.baseCrossed = [];
-  if (!state.crossEnabled && !state.scrapeEnabled) return steps;
   const tl = strokeTimeline(steps);
-  // Notes the drum path already has crossed (kept exactly as they were).
-  const baseCrossed = new Set();
-  walkCrossings(tl, (n, crossed) => { if (crossed) baseCrossed.add(n); });
-  // Main notes in order, with what each one may become.
   const notes = tl.filter((ev) => !ev.grace).map((ev) => ev.ref);
   const isPlain = new Set(tl.filter((ev) => !ev.grace && ev.plain).map((ev) => ev.ref));
+  const idxOf = new Map(notes.map((n, i) => [n, i]));
+  const handAt = (k) => (notes[k] ? notes[k].hand : null);
+  const runLen = (k) => { // length of the same-hand run containing k
+    const h = handAt(k); if (!h) return 0;
+    let a = k, b = k;
+    while (handAt(a - 1) === h) a--;
+    while (handAt(b + 1) === h) b++;
+    return b - a + 1;
+  };
+  // Notes the drum path already has crossed, or already in a run of 3+ -
+  // kept exactly as they were.
+  const baseCrossed = new Set();
+  walkCrossings(tl, (n, crossed) => { if (crossed) baseCrossed.add(n); });
+  const baseLongRun = new Set(notes.filter((n, i) => runLen(i) > 2));
+  const setDrum = (n, d) => { n.drum = d; if (n.ornament === "flam") n.graceDrum = graceDrumFor(n.hand, d); };
+
+  // ── Doubles move only to the next drum over ──
+  const pairOk = (i) => !(notes[i] && notes[i + 1] && notes[i].hand && notes[i].hand === notes[i + 1].hand && !doubleMoveOk(notes[i].drum, notes[i + 1].drum));
+  for (let i = 0; i + 1 < notes.length; i++) {
+    if (pairOk(i)) continue;
+    const x = notes[i], y = notes[i + 1];
+    const tries = [[y, x.drum], [x, y.drum]].concat(NEXT_DRUMS[x.drum].map((d) => [y, d]), NEXT_DRUMS[y.drum].map((d) => [x, d]));
+    for (const [n, d] of tries) {
+      const old = [n.drum, n.graceDrum];
+      setDrum(n, d);
+      if (pairOk(i - 1) && pairOk(i) && crossingsAllowed(tl, baseCrossed)) break;
+      n.drum = old[0]; n.graceDrum = old[1];
+    }
+  }
+  const baseBadPair = new Set(notes.filter((n, i) => !pairOk(i))); // none expected - kept if a fix was impossible
+
+  if (!state.crossEnabled && !state.scrapeEnabled) return steps;
+
   const locked = new Set();
-  // What got placed, by note index - kept on the function for checking.
   const placements = [];
   applyCrossesAndScrapes.lastPlacements = placements;
   // A note a cross/scrape may re-voice: a plain grid step (not inside a
   // tuplet rudiment), not already used, never a flam (its grace would move
-  // the other hand). Scrape strokes also can't be diddles.
-  const canHold = (n) => n && isPlain.has(n) && !locked.has(n) && n.ornament !== "flam" && !!n.hand;
+  // the other hand). Scrape strokes also can't be diddles. A note may only
+  // change hands if it's a single stroke that isn't part of a rudiment.
+  const canHold = (n) => !!n && isPlain.has(n) && !locked.has(n) && n.ornament !== "flam" && !!n.hand;
   const canScrape = (n) => canHold(n) && !n.ornament;
-  const handAt = (k) => (notes[k] ? notes[k].hand : null);
-  // Length of the same-hand run starting at k, if k starts a run.
-  const runAt = (k) => {
-    const h = handAt(k);
-    if (!h || handAt(k - 1) === h) return 0;
-    let len = 1;
-    while (handAt(k + len) === h) len++;
-    return len;
+  const canTake = (n, hand, scrapeStroke) =>
+    (scrapeStroke ? canScrape(n) : canHold(n)) && (n.hand === hand || (!n.rudiment && runLen(idxOf.get(n)) === 1));
+
+  // The whole piece stays legal: no new crossings outside a cross / crossed
+  // scrape, no double jumping past the next drum, no run of 3+.
+  const legal = () => {
+    if (!crossingsAllowed(tl, baseCrossed)) return false;
+    for (let i = 0; i + 1 < notes.length; i++) if (!pairOk(i) && !baseBadPair.has(notes[i])) return false;
+    for (let i = 0; i < notes.length; i++) if (runLen(i) > 2 && !baseLongRun.has(notes[i])) return false;
+    return true;
   };
 
-  // Try a set of drum changes; keep them only if the whole piece stays legal.
+  // Try a set of changes ([note, hand, drum]); keep them only if the whole
+  // piece stays legal. A same-hand neighbor just outside the window that
+  // would now jump past the next drum stays on the window note's drum.
   // `passNotes`: strokes that may pass the other hand without it counting
   // as a cross (no x) - the scrape strokes of a no-cross double-hand scrape.
   const tryPlace = (changes, windowNotes, crossOK, check, passNotes) => {
-    const saved = changes.map(([n]) => [n, n.drum]);
-    changes.forEach(([n, d]) => { n.drum = d; });
+    const touched = new Map();
+    const touch = (n) => { if (!touched.has(n)) touched.set(n, [n.hand, n.drum, n.graceDrum]); };
+    changes.forEach(([n, h, d]) => { touch(n); n.hand = h; setDrum(n, d); });
+    const inWin = new Set(windowNotes);
+    windowNotes.forEach((w) => {
+      const i = idxOf.get(w);
+      [notes[i - 1], notes[i + 1]].forEach((nb) => {
+        if (nb && !inWin.has(nb) && nb.hand === w.hand && !doubleMoveOk(nb.drum, w.drum) && !locked.has(nb)) { touch(nb); setDrum(nb, w.drum); }
+      });
+    });
     windowNotes.forEach((n) => { n._xok = crossOK; });
     (passNotes || []).forEach((n) => { n._xok = true; n._noMark = true; });
-    if (crossingsAllowed(tl, baseCrossed) && (!check || check())) {
+    if (legal() && (!check || check())) {
       windowNotes.forEach((n) => locked.add(n));
-      return true;
+      return [...touched.keys()].filter((n) => touched.get(n)[0] !== n.hand).map((n) => idxOf.get(n));
     }
-    saved.forEach(([n, d]) => { n.drum = d; });
+    touched.forEach(([h, d, g], n) => { n.hand = h; n.drum = d; n.graceDrum = g; });
     windowNotes.concat(passNotes || []).forEach((n) => { delete n._xok; delete n._noMark; });
-    return false;
+    return null;
   };
+  // Hands to try at k: the hand already there first (fewer changes).
+  const handsAt = (k, allowed) => [handAt(k), opposite(handAt(k))].filter((h, i, arr) => h && arr.indexOf(h) === i && allowed(h));
 
   // ── Scrapes ──
   if (state.scrapeEnabled) {
+    const dirsFor = (h) => ALL_SCRAPE_DIRS.some((d) => d.startsWith(h + "H-") && state.scrapeDirs.has(d));
     for (let k = 0; k < notes.length; k++) {
-      if (runAt(k) !== 2) continue;
+      if (!notes[k + 1] || locked.has(notes[k])) continue;
       if (Math.random() * 100 >= state.scrapeDensity) continue;
-      const H = handAt(k), O = opposite(H);
-      const a = notes[k], b = notes[k + 1];
-      if (!canScrape(a) || !canScrape(b)) continue;
-      const before = notes[k - 1] || null;
-      if (before && !canHold(before)) continue;
       const options = [];
-      // Single-hand: O H H O
-      if (state.scrapeSingle) {
-        const after = notes[k + 2] || null;
-        if (!after || canHold(after)) {
-          SINGLE_SCRAPES.forEach((r) => {
-            if (r[0] !== H || !state.scrapeDirs.has(scrapeDirId(H, r[2], r[3]))) return;
-            const holds = scrapeHoldDrums(H, r[2], r[3], state.scrapeCrosses);
-            const crossHolds = state.scrapeCrosses ? r[5] : [];
-            shuffled(holds).forEach((hd) => options.push(() => {
-              const crossed = crossHolds.includes(hd) && !r[4].includes(hd);
-              const ch = [[a, r[2]], [b, r[3]]];
-              const win = [a, b];
-              [before, after].forEach((n) => { if (n) { ch.push([n, hd]); win.push(n); } });
-              const ok = tryPlace(ch, win, crossed);
-              if (ok) placements.push({ kind: "scrape1", at: k, hand: H, from: r[2], to: r[3], hold: hd, crossed });
-              return ok;
-            }));
-          });
-        }
-      }
-      // Double-hand: O? H H O O H? (both doubles scrape)
-      if (state.scrapeDouble && runAt(k + 2) === 2) {
-        const c = notes[k + 2], d = notes[k + 3], after = notes[k + 4] || null;
-        if (canScrape(c) && canScrape(d) && (!after || canHold(after))) {
-          DOUBLE_SCRAPES.forEach((p) => {
-            if (p[4] && !state.scrapeCrosses) return;
-            const [hFrom, hTo, oFrom, oTo] = H === "R" ? p : [p[2], p[3], p[0], p[1]];
-            if (!state.scrapeDirs.has(scrapeDirId(H, hFrom, hTo)) || !state.scrapeDirs.has(scrapeDirId(O, oFrom, oTo))) return;
-            // Other hand before: a drum it may hold during H's scrape -
-            // ideally already where its own scrape starts. H after: a drum
-            // it may hold during O's scrape - ideally where it ended.
-            const preferFirst = (list, want) => (list.includes(want) ? [want].concat(shuffled(list.filter((x) => x !== want))) : shuffled(list));
-            const oHolds = before ? preferFirst(scrapeHoldDrums(H, hFrom, hTo, p[4]), oFrom) : [null];
-            const hHolds = after ? preferFirst(scrapeHoldDrums(O, oFrom, oTo, p[4]), hTo) : [null];
-            options.push(() => {
-              for (const oh of oHolds) for (const hh of hHolds) {
-                const ch = [[a, hFrom], [b, hTo], [c, oFrom], [d, oTo]];
-                const win = [a, b, c, d];
-                if (before) { ch.push([before, oh]); win.push(before); }
-                if (after) { ch.push([after, hh]); win.push(after); }
-                if (tryPlace(ch, win, p[4], null, p[4] ? null : [a, b, c, d])) {
-                  placements.push({ kind: "scrape2", at: k, first: H, hFrom, hTo, oFrom, oTo, oHold: oh, hHold: hh, crossed: p[4] });
-                  return true;
-                }
-              }
-              return false;
+      handsAt(k, dirsFor).forEach((H) => {
+        const O = opposite(H);
+        const a = notes[k], b = notes[k + 1], before = notes[k - 1] || null;
+        if (!canTake(a, H, true) || !canTake(b, H, true) || (before && !canTake(before, O))) return;
+        // Single-hand: O H H O
+        if (state.scrapeSingle) {
+          const after = notes[k + 2] || null;
+          if (!after || canTake(after, O)) {
+            SINGLE_SCRAPES.forEach((r) => {
+              if (r[0] !== H || !state.scrapeDirs.has(scrapeDirId(H, r[2], r[3]))) return;
+              const crossHolds = state.scrapeCrosses ? r[5] : [];
+              shuffled(scrapeHoldDrums(H, r[2], r[3], state.scrapeCrosses)).forEach((hd) => options.push(() => {
+                const crossed = crossHolds.includes(hd) && !r[4].includes(hd);
+                const ch = [[a, H, r[2]], [b, H, r[3]]];
+                const win = [a, b];
+                [before, after].forEach((n) => { if (n) { ch.push([n, O, hd]); win.push(n); } });
+                const restuck = tryPlace(ch, win, crossed);
+                if (restuck) placements.push({ kind: "scrape1", at: k, hand: H, from: r[2], to: r[3], hold: hd, crossed, restuck });
+                return !!restuck;
+              }));
             });
-          });
+          }
         }
-      }
-      for (const place of shuffled(options)) if (place()) break;
+        // Double-hand: O H H O O H (both doubles scrape)
+        if (state.scrapeDouble) {
+          const c = notes[k + 2], d = notes[k + 3], after = notes[k + 4] || null;
+          if (c && d && canTake(c, O, true) && canTake(d, O, true) && (!after || canTake(after, H))) {
+            DOUBLE_SCRAPES.forEach((p) => {
+              if (p[4] && !state.scrapeCrosses) return;
+              const [hFrom, hTo, oFrom, oTo] = H === "R" ? p : [p[2], p[3], p[0], p[1]];
+              if (!state.scrapeDirs.has(scrapeDirId(H, hFrom, hTo)) || !state.scrapeDirs.has(scrapeDirId(O, oFrom, oTo))) return;
+              // Other hand before: a drum it may hold during H's scrape -
+              // ideally already where its own scrape starts. H after: a drum
+              // it may hold during O's scrape - ideally where it ended.
+              const preferFirst = (list, want) => (list.includes(want) ? [want].concat(shuffled(list.filter((x) => x !== want))) : shuffled(list));
+              const oHolds = before ? preferFirst(scrapeHoldDrums(H, hFrom, hTo, p[4]), oFrom) : [null];
+              const hHolds = after ? preferFirst(scrapeHoldDrums(O, oFrom, oTo, p[4]), hTo) : [null];
+              options.push(() => {
+                for (const oh of oHolds) for (const hh of hHolds) {
+                  const ch = [[a, H, hFrom], [b, H, hTo], [c, O, oFrom], [d, O, oTo]];
+                  const win = [a, b, c, d];
+                  if (before) { ch.push([before, O, oh]); win.push(before); }
+                  if (after) { ch.push([after, H, hh]); win.push(after); }
+                  const restuck = tryPlace(ch, win, p[4], null, p[4] ? null : [a, b, c, d]);
+                  if (restuck) {
+                    placements.push({ kind: "scrape2", at: k, first: H, hFrom, hTo, oFrom, oTo, oHold: oh, hHold: hh, crossed: p[4], restuck });
+                    return true;
+                  }
+                }
+                return false;
+              });
+            });
+          }
+        }
+      });
+      // Use the sticking's own doubles when one is here; re-stick only if not.
+      const own = handAt(k) === handAt(k + 1) ? options.slice(0) : [];
+      for (const place of shuffled(own.length ? own : options)) if (place()) break;
     }
   }
 
-  // ── Crosses ──
+  // ── Crosses ── (singles: O H O, doubles: O H H O)
   if (state.crossEnabled) {
     const pairs = CROSS_PAIRS.filter((p) => state.crossPairs.has(crossPairId(p)));
+    const lens = [state.crossSingles ? 1 : 0, state.crossDoubles ? 2 : 0].filter(Boolean);
     for (let k = 0; k < notes.length; k++) {
-      const len = runAt(k);
-      if (!((len === 1 && state.crossSingles) || (len === 2 && state.crossDoubles))) continue;
+      if (locked.has(notes[k])) continue;
       if (Math.random() * 100 >= state.crossDensity) continue;
-      const H = handAt(k);
-      const unit = notes.slice(k, k + len);
-      if (!unit.every(canHold)) continue;
-      const before = notes[k - 1] || null, after = notes[k + len] || null;
-      if ((before && !canHold(before)) || (after && !canHold(after))) continue;
-      for (const p of shuffled(pairs)) {
-        const hDrum = H === "R" ? p[0] : p[1], oDrum = H === "R" ? p[1] : p[0];
-        const ch = unit.map((n) => [n, hDrum]);
-        const win = unit.slice();
-        [before, after].forEach((n) => { if (n) { ch.push([n, oDrum]); win.push(n); } });
-        // The hand in the unit has to be the one that crosses over.
-        const check = () => { markCrossedNotes(tl); return unit.every((n) => n.crossMark) && !(before && before.crossMark); };
-        if (tryPlace(ch, win, true, check)) { placements.push({ kind: "cross", at: k, hand: H, len, hDrum, oDrum }); break; }
+      let placed = false;
+      // An existing single/double of the chosen size is used first; otherwise
+      // the sticking around k is re-stuck to make one.
+      for (const len of shuffled(lens)) {
+        if (placed) break;
+        for (const H of handsAt(k, () => true)) {
+          if (placed) break;
+          const O = opposite(H);
+          const unit = notes.slice(k, k + len);
+          if (unit.length !== len || !unit.every((n) => canTake(n, H))) continue;
+          const before = notes[k - 1] || null, after = notes[k + len] || null;
+          if ((before && !canTake(before, O)) || (after && !canTake(after, O))) continue;
+          for (const p of shuffled(pairs)) {
+            const hDrum = H === "R" ? p[0] : p[1], oDrum = H === "R" ? p[1] : p[0];
+            const ch = unit.map((n) => [n, H, hDrum]);
+            const win = unit.slice();
+            [before, after].forEach((n) => { if (n) { ch.push([n, O, oDrum]); win.push(n); } });
+            // The hand in the unit has to be the one that crosses over.
+            const check = () => { markCrossedNotes(tl); return unit.every((n) => n.crossMark) && !(before && before.crossMark); };
+            const restuck = tryPlace(ch, win, true, check);
+            if (restuck) { placements.push({ kind: "cross", at: k, hand: H, len, hDrum, oDrum, restuck }); placed = true; break; }
+          }
+        }
       }
     }
   }
@@ -1940,7 +2012,7 @@ function attemptRudimentInsertion(steps, stepsPerMeasure, stepsPerBeat, pool, oc
     const rSteps = chosen.steps[0].hand === dueHand ? chosen.steps : mirrorRudimentSteps(chosen.steps);
 
     for (let k = 0; k < rSteps.length; k++) {
-      steps[globalStart + k] = { hand: rSteps[k].hand, accent: rSteps[k].accent, ornament: rSteps[k].ornament };
+      steps[globalStart + k] = { hand: rSteps[k].hand, accent: rSteps[k].accent, ornament: rSteps[k].ornament, rudiment: true };
       occupied.add(globalStart + k);
     }
 
@@ -3143,10 +3215,6 @@ document.querySelectorAll("#flamVoicingGroup .tog").forEach((btn) => {
 
 // ── Crosses & Scrapes ──
 // Multi-select chips: each click flips one option; at least one stays on.
-function stickingHasDoubles() {
-  const c = getStickingCycle();
-  return c.some((h, i) => h === c[(i + 1) % c.length]) || state.rudimentsEnabled;
-}
 function syncCrossScrapeUI() {
   document.getElementById("crossToggle").checked = state.crossEnabled;
   document.getElementById("crossDetailControl").classList.toggle("controls-disabled", !state.crossEnabled);
@@ -3171,7 +3239,6 @@ function syncCrossScrapeUI() {
 
   document.getElementById("scrapeToggle").checked = state.scrapeEnabled;
   document.getElementById("scrapeDetailControl").classList.toggle("controls-disabled", !state.scrapeEnabled);
-  document.getElementById("scrapeNoDoublesNote").style.display = state.scrapeEnabled && !stickingHasDoubles() ? "block" : "none";
   document.querySelectorAll("#scrapeTypeGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.scrapeType === "single" ? state.scrapeSingle : state.scrapeDouble));
   document.querySelectorAll("#scrapeDirGroup .tog").forEach((b) => b.classList.toggle("on", state.scrapeDirs.has(b.dataset.scrapeDir)));
   document.getElementById("scrapeCrossToggle").checked = state.scrapeCrosses;
@@ -3211,10 +3278,6 @@ document.getElementById("scrapeDensitySlider").addEventListener("input", (e) => 
   document.getElementById("scrapeDensityVal").textContent = state.scrapeDensity + "%";
 });
 document.getElementById("scrapeDensitySlider").addEventListener("change", () => generateAndRender());
-// The "no doubles" note follows the sticking.
-document.getElementById("stickingGroup").addEventListener("click", () => setTimeout(syncCrossScrapeUI, 0));
-document.getElementById("acc-sticking").addEventListener("click", () => setTimeout(syncCrossScrapeUI, 0));
-document.getElementById("rudimentsToggle").addEventListener("change", () => setTimeout(syncCrossScrapeUI, 0));
 
 // ── Subdivision toggle ──
 document.querySelectorAll("#subdivisionGroup .tog").forEach((btn) => {
