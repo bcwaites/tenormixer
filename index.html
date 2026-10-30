@@ -646,7 +646,11 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
           <div class="tog" data-cycle="beat">Restart each beat</div>
           <div class="tog" data-cycle="measure">Restart each bar</div>
         </div>
-        <div class="field-hint" style="margin-top:8px;">Both hands can play every drum. With crossovers off, a hand never reaches past the other hand. Paths keep each hand on its home side (L: 4, 2, S2 &middot; R: 1, 3, S1), swapping any drum sent across for its mirror (4&harr;3, 2&harr;1, S2&harr;S1).</div>
+        <div class="voice-toggle-row" style="margin-top:8px;">
+          <span class="v-label">Free movement</span>
+          <label class="switch"><input type="checkbox" id="freeMovementToggle"><span class="switch-track"></span></label>
+        </div>
+        <div class="field-hint" style="margin-top:8px;">Both hands can play every drum. With Free movement off, a hand never reaches past the other hand: paths keep each hand on its home side (L: 4, 2, S2 &middot; R: 1, 3, S1), swapping any drum sent across for its mirror (4&harr;3, 2&harr;1, S2&harr;S1). With Free movement on, hands go wherever the path sends them, like modern feature writing - either hand can play any drum. They only cross over each other when Crosses is on; every cross is marked with an x on its first note.</div>
       </div>
     </div>
 
@@ -746,6 +750,7 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
         <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="acc-body" id="acc-crosses">
+        <div class="field-hint" style="margin-bottom:8px;">Crosses is the master switch. Off: the hands never pass each other anywhere in the piece - paths, Free movement, scrapes, scrape rolls and double stops all stay uncrossed (R L R L on 4 2 4 2 can't happen; L R L R on 4 2 4 2 can).</div>
         <div class="voice-toggle-row">
           <span class="v-label">Add crosses</span>
           <label class="switch"><input type="checkbox" id="crossToggle"><span class="switch-track"></span></label>
@@ -792,7 +797,7 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
             <div class="tog on" data-scrape-dir="LH-IN">LH In</div>
           </div>
           <div class="voice-toggle-row" style="margin-top:8px;">
-            <span class="v-label">Include crossed scrapes</span>
+            <span class="v-label">Include crossed scrapes (needs Crosses on)</span>
             <label class="switch"><input type="checkbox" id="scrapeCrossToggle"><span class="switch-track"></span></label>
           </div>
           <div class="field-label" style="display:flex; justify-content:space-between;">
@@ -801,6 +806,57 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
           </div>
           <input type="range" id="scrapeDensitySlider" min="5" max="100" value="50" step="5" style="width:100%;">
           <div class="field-hint" style="margin-top:8px;">A scrape is a double that moves to the next drum over in one motion: RR for RH In/Out, LL for LH In/Out, with any sticking. Out = toward the outside of the body (RH right, LH left); In = back toward the middle. Doubles already in the sticking are used as they are; in single strokes, the notes around a scrape are re-stuck to fit. Drums 1&ndash;4, next drum over only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-section">
+      <button class="acc-trigger" data-target="acc-rolls">
+        Scrape Rolls
+        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="acc-body" id="acc-rolls">
+        <div class="voice-toggle-row">
+          <span class="v-label">Add scrape rolls</span>
+          <label class="switch"><input type="checkbox" id="rollToggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="rollDetailControl" class="controls-disabled">
+          <div class="field-label">Type</div>
+          <div class="radio-group" id="rollTypeGroup">
+            <div class="tog on" data-roll-type="oneOne">One &amp; One's</div>
+            <div class="tog on" data-roll-type="twoTwo">Two &amp; Two's</div>
+          </div>
+          <div class="field-label" style="display:flex; justify-content:space-between;">
+            <span>How often (beats)</span>
+            <span id="rollDensityVal" style="color:#1A1A1A; font-weight:700;">25%</span>
+          </div>
+          <input type="range" id="rollDensitySlider" min="5" max="100" value="25" step="5" style="width:100%;">
+          <div class="field-hint" style="margin-top:8px;">A roll beat alternates hands every 16th. One &amp; One's: a scrape (two 32nds, next drum over) by one hand, a diddle by the other. Two &amp; Two's: every 16th is a scrape (R2-R1 L2-L1). Scrapes use the Scrapes directions; crossed ones need Crosses on plus Include crossed scrapes or Free movement, and get the x. 16th notes only.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="acc-section">
+      <button class="acc-trigger" data-target="acc-stops">
+        Double Stops
+        <svg class="acc-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="acc-body" id="acc-stops">
+        <div class="voice-toggle-row">
+          <span class="v-label">Add double stops</span>
+          <label class="switch"><input type="checkbox" id="stopToggle"><span class="switch-track"></span></label>
+        </div>
+        <div id="stopDetailControl" class="controls-disabled">
+          <div class="voice-toggle-row">
+            <span class="v-label">Include crossed double stops (needs Crosses on)</span>
+            <label class="switch"><input type="checkbox" id="stopCrossToggle"><span class="switch-track"></span></label>
+          </div>
+          <div class="field-label" style="display:flex; justify-content:space-between;">
+            <span>How often (notes)</span>
+            <span id="stopDensityVal" style="color:#1A1A1A; font-weight:700;">20%</span>
+          </div>
+          <input type="range" id="stopDensitySlider" min="5" max="100" value="20" step="5" style="width:100%;">
+          <div class="field-hint" style="margin-top:8px;">Both hands at once on two drums, on any note - accented or not. Written as a chord with no sticking - both hands are implied. Normally the LH takes the left drum; crossed double stops (RH on the left drum) are marked with an x.</div>
         </div>
       </div>
     </div>
@@ -1007,6 +1063,10 @@ html.mw-touch #mwNativeShare.available { display: inline-flex; align-items: cent
 // all three duration systems coexist in the same document.
 const DIVISIONS = 60;
 const TICKS_PER_SIXTEENTH = DIVISIONS / 4;
+// Scrape rolls use 32nd notes (7.5 ticks). The written MusicXML doubles
+// every duration and the divisions so all values stay whole numbers;
+// the engine's own tick counts are unchanged.
+const XML_TICK_SCALE = 2;
 
 const STICKING_PATTERNS = {
   alternating: ["R", "L"],
@@ -1085,8 +1145,17 @@ function handOwnsDrum(hand, drum) {
 // what keeps every generated pattern physically playable without crossing,
 // for any sticking - e.g. Outside-In (4-3-2-1) under R L R L sticking comes
 // out R3 L4 R1 L2: outer pair, then inner pair.
+// Crosses is the master switch (Bryan): with it off, the hands never pass
+// each other anywhere in the piece - not in the path, Free movement,
+// scrapes, scrape rolls or double stops. Either hand may still play any
+// drum, as long as it doesn't reach past the other hand.
+const crossingsOn = () => !!state.crossEnabled;
+const freeCross = () => state.freeMovement && crossingsOn();       // Free movement may cross
+const scrapeCrossOn = () => state.scrapeCrosses && crossingsOn();   // crossed scrapes / rolls
+const stopCrossOn = () => state.stopCrossed && crossingsOn();       // crossed double stops
+
 function playableDrumFor(hand, target) {
-  if (!hand || handOwnsDrum(hand, target)) return target;
+  if (!hand || state.freeMovement || handOwnsDrum(hand, target)) return target;
   const m = MIRROR_DRUM[target];
   return (m && availableDrums().includes(m)) ? m : target;
 }
@@ -1099,7 +1168,10 @@ const DRUM_PATHS = {
   insideOut: { label: "Inside-Out",       hint: "Starts on the small inner drums and moves out to the large outer drums (1-2-3-4)." },
   outsideIn: { label: "Outside-In",       hint: "Starts on the large outer drums and moves in (4-3-2-1)." },
   butterfly: { label: "Butterfly",        hint: "Symmetrical: both hands on the outer pair, weave in to the inner pair, then back out." },
-  random:    { label: "Random",           hint: "Each note goes to a random drum the hand can reach without passing the other hand." },
+  frontPair: { label: "Front Pair",       hint: "Back and forth on the two front drums, as in modern features: 2-1-1-2. With Doubles sticking it comes out R2 R1 L1 L2. Turn on Free movement for the full feature-style motion." },
+  walking:   { label: "Walking Doubles",  hint: "Each single or double stays on one drum, and each new one moves to a different drum (R1 L2 R1 L4 R3 L2 ...), like the Doubles section of the Conventions sheet." },
+  spock:     { label: "Spock Pattern",    hint: "Drum, spock, drum, spock - spock runs and interjections like R1 RS2 L2. Needs 5 or 6 drums." },
+  random:    { label: "Random",           hint: "Each note goes to a random drum the hand can reach without passing the other hand (any drum with Free movement on)." },
   custom:    { label: "Custom",           hint: "Click a cell to cycle which drum that position targets. A cell that would cross is moved to the nearest drum that doesn't." },
 };
 
@@ -1119,6 +1191,12 @@ function pathSequence() {
       return sp ? (six ? ["S1", "S2", "1", "2", "3", "4"] : ["S", "1", "2", "3", "4"]) : ["1", "2", "3", "4"];
     case "outsideIn":
       return sp ? (six ? ["4", "3", "2", "1", "S2", "S1"] : ["4", "3", "2", "1", "S"]) : ["4", "3", "2", "1"];
+    case "frontPair":
+      return ["2", "1", "1", "2"];
+    case "spock":
+      if (state.drumCount === 6) return ["1", "S1", "2", "S2"];
+      if (state.drumCount === 5) return ["1", "S", "2", "S"];
+      return ["1", "2", "3", "4"]; // no spock on quads - plays like Inside-Out
     case "butterfly":
       return sp
         ? (six ? ["3", "4", "1", "2", "S1", "S2", "1", "2"] : ["3", "4", "1", "2", "S", "S", "1", "2"])
@@ -1142,7 +1220,7 @@ function ensureCustomDrums() {
 // so a hand can wander across the middle as long as the other hand has
 // moved out of its way.
 function randomDrumFor(hand, otherDrum) {
-  const pool = availableDrums().filter((d) => (spocksInPaths() || !isSpock(d)) && !crossesOver(hand, d, otherDrum));
+  const pool = availableDrums().filter((d) => (spocksInPaths() || !isSpock(d)) && (freeCross() || !crossesOver(hand, d, otherDrum)));
   return pool[Math.floor(Math.random() * pool.length)] || otherDrum || "1";
 }
 
@@ -1180,26 +1258,48 @@ function assignDrums(steps, stepsPerMeasure, stepsPerBeat) {
   // Where each stick currently is. Both start at home: L on 2, R on 1.
   const at = { L: "2", R: "1" };
   const other = (hand) => at[hand === "R" ? "L" : "R"];
+  let lastHand = null;
   const pick = (hand, rel) => {
     let drum;
+    if (state.drumPath === "walking") {
+      // Same hand as the note before: the single/double stays on its drum.
+      // A new single/double moves to a different drum.
+      if (hand && hand === lastHand && at[hand]) drum = at[hand];
+      else {
+        const pool = availableDrums().filter((d) => (spocksInPaths() || !isSpock(d)) && d !== at[hand] &&
+          (freeCross() || !hand || !crossesOver(hand, d, other(hand))));
+        drum = pool[Math.floor(Math.random() * pool.length)] || at[hand] || "1";
+      }
+      lastHand = hand;
+      idx++;
+      if (hand) at[hand] = drum;
+      return drum;
+    }
+    lastHand = hand;
     if (state.drumPath === "random") {
       drum = randomDrumFor(hand, other(hand));
     } else if (state.drumPath === "single") {
       drum = seq[0]; // both hands share the one drum - never a cross
     } else if (state.drumPath === "custom") {
       drum = state.customDrums[rel];
-      if (crossesOver(hand, drum, other(hand))) {
+      if (!freeCross() && crossesOver(hand, drum, other(hand))) {
         const m = MIRROR_DRUM[drum];
         drum = (m && availableDrums().includes(m) && !crossesOver(hand, m, other(hand))) ? m : nearestUncrossed(hand, drum, other(hand));
       }
     } else {
       drum = playableDrumFor(hand, seq[idx % seq.length]);
     }
+    // No crossing unless Crosses (and Free movement) allow it: a drum past
+    // the other hand becomes its mirror, or the nearest drum that doesn't pass.
+    if (hand && !freeCross() && crossesOver(hand, drum, other(hand))) {
+      const m = MIRROR_DRUM[drum];
+      drum = (m && availableDrums().includes(m) && !crossesOver(hand, m, other(hand))) ? m : nearestUncrossed(hand, drum, other(hand));
+    }
     idx++;
     if (hand) at[hand] = drum;
     return drum;
   };
-  const noteGrace = (hand, grace) => { if (grace && hand) at[hand === "R" ? "L" : "R"] = grace; };
+  const noteGrace = () => {}; // a grace tap doesn't move the hand (see walkCrossings)
   steps.forEach((step, g) => {
     if (resetUnit && g % resetUnit === 0) idx = 0;
     if (step.specialContinuation) return;
@@ -1308,6 +1408,8 @@ function strokeTimeline(steps) {
     list.forEach((n) => {
       if (n.ornament === "flam" && n.hand && n.graceDrum) tl.push({ grace: true, hand: opposite(n.hand), get drum() { return n.graceDrum; } });
       tl.push({ ref: n, plain: !(step.special && step.specialNotes) });
+      // A double stop's second drum is the other hand, at the same moment.
+      if (n.stop) tl.push({ ref: { hand: n.stop.hand, drum: n.stop.drum, _pseudo: true, stopOf: n }, plain: false });
     });
   });
   return tl;
@@ -1317,7 +1419,10 @@ function strokeTimeline(steps) {
 function walkCrossings(tl, fn) {
   const at = { L: "2", R: "1" };
   for (const ev of tl) {
-    if (ev.grace) { at[ev.hand] = ev.drum; continue; }
+    // A flam's grace is a quick tap: the hand doesn't stay there, so it
+    // doesn't change where that hand is. (A grace never passes its own main
+    // note - split graces go on the grace hand's side.)
+    if (ev.grace) continue;
     const n = ev.ref;
     if (!n.hand || !n.drum) { if (fn(n, false) === false) return false; continue; }
     if (fn(n, crossesOver(n.hand, n.drum, at[opposite(n.hand)])) === false) return false;
@@ -1331,20 +1436,36 @@ function walkCrossings(tl, fn) {
 // path already put it (e.g. a same-drum flam's grace overlapping for an
 // instant) - the new pass never adds crossings anywhere else.
 function crossingsAllowed(tl, baseCrossed) {
+  if (freeCross()) return true; // Free movement with Crosses on: hands may cross anywhere
   return walkCrossings(tl, (n, crossed) => !(crossed && !n._xok && !(baseCrossed && baseCrossed.has(n))));
 }
 
-// Marks the notes of the hand that crossed over, for as long as the hands
-// stay crossed - only inside a cross or crossed scrape (notes carrying
-// _xok); passing during a no-cross double scrape is never marked.
+// The x goes on the first note of each single or double the crossing hand
+// plays while the hands are crossed (Bryan's Conventions sheet marks only
+// the first note of a crossed double). A flam's grace is a quick tap and
+// doesn't count as a change of position here. Every crossed pattern is
+// marked, whatever made it. Passing during a no-cross double-hand scrape
+// (hands swapping) is never marked.
 function markCrossedNotes(tl) {
-  let crossingHand = null;
-  walkCrossings(tl, (n, crossed) => {
-    n.crossMark = false;
-    if (!n.hand) return;
-    if (!crossed || n._noMark) { crossingHand = null; return; }
-    if (!crossingHand) crossingHand = n.hand;
-    n.crossMark = n.hand === crossingHand && !!n._xok;
+  const at = { L: "2", R: "1" };
+  let crossingHand = null, prev = null;
+  tl.forEach((ev) => {
+    if (ev.grace) return;
+    const n = ev.ref;
+    if (!n._pseudo) n.crossMark = false;
+    if (!n.hand || !n.drum) return;
+    const crossed = crossesOver(n.hand, n.drum, at[opposite(n.hand)]);
+    // A crossed double stop is marked as a chord; whichever hand plays on
+    // while still crossed starts a new marked run.
+    if (!crossed || n._noMark || n.noCrossMark || n._pseudo) crossingHand = null;
+    else {
+      if (!crossingHand) crossingHand = n.hand;
+      const runStart = !prev || prev.hand !== n.hand;
+      // Bryan: any crossed pattern is marked, whatever made it.
+      if (!n._pseudo && n.hand === crossingHand && runStart) n.crossMark = true;
+    }
+    at[n.hand] = n.drum;
+    prev = n;
   });
 }
 
@@ -1395,6 +1516,7 @@ function applyCrossesAndScrapes(steps) {
     const x = notes[i], y = notes[i + 1];
     const tries = [[y, x.drum], [x, y.drum]].concat(NEXT_DRUMS[x.drum].map((d) => [y, d]), NEXT_DRUMS[y.drum].map((d) => [x, d]));
     for (const [n, d] of tries) {
+      if (n.roll || n._pseudo) continue; // scrape-roll notes keep their drums
       const old = [n.drum, n.graceDrum];
       setDrum(n, d);
       if (pairOk(i - 1) && pairOk(i) && crossingsAllowed(tl, baseCrossed)) break;
@@ -1412,7 +1534,7 @@ function applyCrossesAndScrapes(steps) {
   // tuplet rudiment), not already used, never a flam (its grace would move
   // the other hand). Scrape strokes also can't be diddles. A note may only
   // change hands if it's a single stroke that isn't part of a rudiment.
-  const canHold = (n) => !!n && isPlain.has(n) && !locked.has(n) && n.ornament !== "flam" && !!n.hand;
+  const canHold = (n) => !!n && isPlain.has(n) && !locked.has(n) && n.ornament !== "flam" && !!n.hand && !n.roll;
   const canScrape = (n) => canHold(n) && !n.ornament;
   const canTake = (n, hand, scrapeStroke) =>
     (scrapeStroke ? canScrape(n) : canHold(n)) && (n.hand === hand || (!n.rudiment && runLen(idxOf.get(n)) === 1));
@@ -1472,8 +1594,8 @@ function applyCrossesAndScrapes(steps) {
           if (!after || canTake(after, O)) {
             SINGLE_SCRAPES.forEach((r) => {
               if (r[0] !== H || !state.scrapeDirs.has(scrapeDirId(H, r[2], r[3]))) return;
-              const crossHolds = state.scrapeCrosses ? r[5] : [];
-              shuffled(scrapeHoldDrums(H, r[2], r[3], state.scrapeCrosses)).forEach((hd) => options.push(() => {
+              const crossHolds = scrapeCrossOn() ? r[5] : [];
+              shuffled(scrapeHoldDrums(H, r[2], r[3], scrapeCrossOn())).forEach((hd) => options.push(() => {
                 const crossed = crossHolds.includes(hd) && !r[4].includes(hd);
                 const ch = [[a, H, r[2]], [b, H, r[3]]];
                 const win = [a, b];
@@ -1490,7 +1612,7 @@ function applyCrossesAndScrapes(steps) {
           const c = notes[k + 2], d = notes[k + 3], after = notes[k + 4] || null;
           if (c && d && canTake(c, O, true) && canTake(d, O, true) && (!after || canTake(after, H))) {
             DOUBLE_SCRAPES.forEach((p) => {
-              if (p[4] && !state.scrapeCrosses) return;
+              if (p[4] && !scrapeCrossOn()) return;
               const [hFrom, hTo, oFrom, oTo] = H === "R" ? p : [p[2], p[3], p[0], p[1]];
               if (!state.scrapeDirs.has(scrapeDirId(H, hFrom, hTo)) || !state.scrapeDirs.has(scrapeDirId(O, oFrom, oTo))) return;
               // Other hand before: a drum it may hold during H's scrape -
@@ -1548,7 +1670,7 @@ function applyCrossesAndScrapes(steps) {
             const win = unit.slice();
             [before, after].forEach((n) => { if (n) { ch.push([n, O, oDrum]); win.push(n); } });
             // The hand in the unit has to be the one that crosses over.
-            const check = () => { markCrossedNotes(tl); return unit.every((n) => n.crossMark) && !(before && before.crossMark); };
+            const check = () => { markCrossedNotes(tl); return unit[0].crossMark && !(before && before.crossMark); };
             const restuck = tryPlace(ch, win, true, check);
             if (restuck) { placements.push({ kind: "cross", at: k, hand: H, len, hDrum, oDrum, restuck }); placed = true; break; }
           }
@@ -1557,9 +1679,159 @@ function applyCrossesAndScrapes(steps) {
     }
   }
 
-  markCrossedNotes(tl);
   applyCrossesAndScrapes.baseCrossed = notes.map((n, i) => (baseCrossed.has(n) ? i : -1)).filter((i) => i >= 0);
-  notes.forEach((n) => { delete n._xok; delete n._noMark; });
+  // Keep what the final marking needs: which notes are part of a deliberate
+  // cross, and which only pass during a scrape.
+  notes.forEach((n) => {
+    if (n._xok === true && !n._noMark) n.markable = true;
+    if (n._noMark) n.noCrossMark = true;
+    if (locked.has(n)) n.inWindow = true;
+    delete n._xok; delete n._noMark;
+  });
+  return steps;
+}
+
+const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// ══════════════════════════════════════════════════════════════════════
+// SCRAPE ROLLS (Bryan's Conventions sheet: "One & One's / Two & Two's")
+// A roll beat replaces one beat of 16ths with 16th-note units in
+// alternating hands. Each unit is a diddle (two strokes on one drum, the
+// slash) or a scrape (two 32nds on neighboring drums in one motion):
+//   One & One's - scrape and diddle units take turns: R1-R3, L2 diddle ...
+//   Two & Two's - every unit is a scrape: R2-R1, L2-L1 ...
+// Scrapes follow the Scrapes directions; crossed ones only with "Include
+// crossed scrapes" or Free movement on, and they get the x. A diddle sits
+// on a drum the sheet lists for the other hand around those scrapes.
+// 16th-note subdivision only.
+// ══════════════════════════════════════════════════════════════════════
+const ROLL_32ND = TICKS_PER_SIXTEENTH / 2;
+function applyScrapeRolls(steps, stepsPerBeat) {
+  if (!state.rollEnabled || state.subdivision !== "sixteenth" || !state.rollTypes.size) return steps;
+  const crossOK = crossingsOn() && (state.freeMovement || state.scrapeCrosses);
+  const moves = SINGLE_SCRAPES.filter((r) => state.scrapeDirs.has(scrapeDirId(r[0], r[2], r[3])));
+  const base = new Set();
+  walkCrossings(strokeTimeline(steps), (n, crossed) => { if (crossed) base.add(n); });
+  const lastHandBefore = (i) => {
+    for (let k = i - 1; k >= 0; k--) {
+      const st = steps[k];
+      if (st.specialContinuation) continue;
+      if (st.special && st.specialNotes) return st.specialNotes[st.specialNotes.length - 1].hand;
+      return st.hand;
+    }
+    return null;
+  };
+  const legal = (rollNotes) => {
+    const tl = strokeTimeline(steps);
+    if (!walkCrossings(tl, (n, crossed) => !(crossed && !freeCross() && !base.has(n) && !(crossOK && rollNotes.has(n))))) return false;
+    const ns = tl.filter((e) => !e.grace).map((e) => e.ref);
+    for (let i = 0; i + 1 < ns.length; i++) {
+      const a = ns[i], c = ns[i + 1];
+      if ((rollNotes.has(a) || rollNotes.has(c)) && a.hand && a.hand === c.hand && !doubleMoveOk(a.drum, c.drum)) return false;
+    }
+    return true;
+  };
+  for (let s0 = 0; s0 + stepsPerBeat <= steps.length; s0 += stepsPerBeat) {
+    if (Math.random() * 100 >= state.rollDensity) continue;
+    const old = steps.slice(s0, s0 + stepsPerBeat);
+    if (old.some((st) => st.special || st.specialContinuation || st.ornament === "flam" || st.rudiment || !st.hand)) continue;
+    const prevHand = lastHandBefore(s0);
+    const first = prevHand ? opposite(prevHand) : old[0].hand;
+    let placed = false;
+    for (const type of shuffled([...state.rollTypes])) {
+      for (let attempt = 0; attempt < 40 && !placed; attempt++) {
+        const scrapeOnEven = Math.random() < 0.5;
+        const plan = old.map((st, i) => {
+          const hand = i % 2 ? opposite(first) : first;
+          const isScrape = type === "twoTwo" || (i % 2 === 0) === scrapeOnEven;
+          if (!isScrape) return { hand };
+          const opts = moves.filter((r) => r[0] === hand);
+          const r = opts.length ? pickOne(opts) : null;
+          return r ? { hand, from: r[2], to: r[3] } : { hand, impossible: true };
+        });
+        if (plan.some((u) => u.impossible)) break; // this hand has no scrape directions on
+        plan.forEach((u, i) => {
+          if (u.from) return;
+          let pool = null;
+          [plan[i - 1], plan[i + 1]].forEach((x) => {
+            if (!x || !x.from) return;
+            const h = scrapeHoldDrums(x.hand, x.from, x.to, crossOK);
+            pool = pool ? pool.filter((d) => h.includes(d)) : h;
+          });
+          u.drum = pickOne(pool && pool.length ? pool : ["4", "2", "1", "3"]);
+        });
+        const rollNotes = new Set();
+        const fresh = plan.map((u, i) => {
+          const accent = i === 0 && old[0].accent && !!u.from;
+          if (!u.from) {
+            const st = { hand: u.hand, accent: false, ornament: "drag", drum: u.drum, roll: true };
+            rollNotes.add(st); return st;
+          }
+          const a = { hand: u.hand, drum: u.from, ticks: ROLL_32ND, xmlType: "32nd", accent, ornament: null, roll: true };
+          const b = { hand: u.hand, drum: u.to, ticks: ROLL_32ND, xmlType: "32nd", accent: false, ornament: null, roll: true };
+          rollNotes.add(a); rollNotes.add(b);
+          return { hand: u.hand, accent: false, ornament: null, special: true, slotSpan: 1, roll: true, specialNotes: [a, b] };
+        });
+        fresh.forEach((st, i) => { steps[s0 + i] = st; });
+        if (legal(rollNotes)) {
+          if (crossOK) rollNotes.forEach((n) => { n.markable = true; });
+          placed = true;
+        } else {
+          old.forEach((st, i) => { steps[s0 + i] = st; });
+        }
+      }
+      if (placed) break;
+    }
+  }
+  return steps;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// DOUBLE STOPS (Bryan's Conventions sheet)
+// Both hands at once on two drums, written as a chord with no sticking -
+// both hands are implied. Uncrossed: the LH on the left drum, the RH on the
+// right. Crossed (optional): the other way round, marked with the x.
+// Placed on any plain note (accented or not); the note's own drum stays,
+// the other hand adds the second drum.
+// ══════════════════════════════════════════════════════════════════════
+function applyDoubleStops(steps) {
+  if (!state.stopEnabled) return steps;
+  const drums = availableDrums();
+  const base = new Set();
+  walkCrossings(strokeTimeline(steps), (n, crossed) => { if (crossed) base.add(n); });
+  steps.forEach((st) => {
+    // Any plain note can take a double stop, accented or not (Bryan).
+    if (st.special || st.specialContinuation || st.ornament || st.roll || st.inWindow || !st.hand || !st.drum) return;
+    if (Math.random() * 100 >= state.stopDensity) return;
+    const O = opposite(st.hand);
+    const options = shuffled(drums.filter((e) => e !== st.drum).map((e) => {
+      const crossed = O === "L" ? DRUMS[e].x > DRUMS[st.drum].x : DRUMS[e].x < DRUMS[st.drum].x;
+      return { hand: O, drum: e, crossed };
+    }).filter((o) => !o.crossed || stopCrossOn()));
+    for (const o of options) {
+      st.stop = o;
+      const tl = strokeTimeline(steps);
+      const ns = tl.filter((e) => !e.grace).map((e) => e.ref);
+      const i = ns.findIndex((n) => n._pseudo && n.stopOf === st);
+      // The other hand's stroke just before / after must stay on its drum or
+      // move to the next drum over, like any double.
+      const prevO = ns[i - 2] && ns[i - 2].hand === O ? ns[i - 2] : null;
+      const nextO = ns[i + 1] && ns[i + 1].hand === O ? ns[i + 1] : null;
+      const adjOk = (!prevO || doubleMoveOk(prevO.drum, o.drum)) && (!nextO || doubleMoveOk(o.drum, nextO.drum));
+      const crossOk = walkCrossings(tl, (n, crossed) => !(crossed && !freeCross() && !base.has(n) && !(n._pseudo && n.stopOf === st && o.crossed)));
+      if (adjOk && crossOk) return;
+      delete st.stop;
+    }
+  });
+  return steps;
+}
+
+// Final x marks, after every pass. A crossed double stop is marked on its
+// chord.
+function finalizeCrossMarks(steps) {
+  const tl = strokeTimeline(steps);
+  markCrossedNotes(tl);
+  tl.forEach((ev) => { if (!ev.grace && ev.ref._pseudo && ev.ref.stopOf.stop.crossed) ev.ref.stopOf.crossMark = true; });
   return steps;
 }
 
@@ -1758,6 +2030,20 @@ const state = {
   scrapeDouble: true,      // both hands' doubles scrape back to back
   scrapeCrosses: false,    // also use the sheet's crossed scrapes
   scrapeDirs: new Set(ALL_SCRAPE_DIRS),
+
+  // Free movement (modern feature writing): hands may move to any drum and
+  // cross the middle; every cross is marked with the x.
+  freeMovement: false,
+
+  // Scrape rolls (16th notes only)
+  rollEnabled: false,
+  rollDensity: 25,         // % of beats that become a roll
+  rollTypes: new Set(["oneOne", "twoTwo"]),
+
+  // Double stops (both hands, two drums)
+  stopEnabled: false,
+  stopDensity: 20,         // % of notes
+  stopCrossed: false,      // also use crossed positions (marked x)
 };
 
 function ensureCustomSticking() {
@@ -1845,7 +2131,20 @@ function makeOrnamentChecker(enabled, mode, eligible, density, stepsPerMeasure) 
   return (rel) => chosen.has(rel);
 }
 
+// With Crosses off, the finished piece must never have the hands pass each
+// other (Bryan). Every pass already avoids it; this re-rolls the piece in
+// the rare case one slips through.
 function generateGridSteps() {
+  for (let attempt = 0; ; attempt++) {
+    const steps = generateGridStepsOnce();
+    if (crossingsOn() || attempt >= 30 || !hasUnwantedCrossing(steps)) return steps;
+  }
+}
+function hasUnwantedCrossing(steps) {
+  return !walkCrossings(strokeTimeline(steps), (n, crossed) => !(crossed && !n.noCrossMark));
+}
+
+function generateGridStepsOnce() {
   const stepsPerMeasure = stepsPerMeasureFor(state.subdivision);
   const stepsPerBeat = stepsPerMeasure / 4;
   const stickingCycle = getStickingCycle();
@@ -1890,7 +2189,12 @@ function generateGridSteps() {
     }
   }
   const withRudiments = insertRandomRudiment(steps, stepsPerMeasure, stepsPerBeat);
-  return stripAccentsFromDiddles(applyCrossesAndScrapes(assignDrums(withRudiments, stepsPerMeasure, stepsPerBeat)));
+  const voiced = assignDrums(withRudiments, stepsPerMeasure, stepsPerBeat);
+  applyScrapeRolls(voiced, stepsPerBeat);
+  applyCrossesAndScrapes(voiced);
+  applyDoubleStops(voiced);
+  finalizeCrossMarks(voiced);
+  return stripAccentsFromDiddles(voiced);
 }
 
 // RULE (for now, per Bryan): a diddle never carries an accent. When a note
@@ -2187,7 +2491,7 @@ function opposite(hand) { return hand === "R" ? "L" : "R"; }
 // grid types), preserve that ordering - notationParts must stay scoped to
 // the main-note block only.
 function buildNoteXml(step, opts) {
-  const { xmlType, durationTicks, isTriplet, beamLevel1, beamLevel2, tupletStart, tupletStop, showTupletBracket, tupletActual, tupletNormal, tupletNormalType } = opts;
+  const { xmlType, durationTicks, isTriplet, beamLevel1, beamLevel2, beamLevel3, tupletStart, tupletStop, showTupletBracket, tupletActual, tupletNormal, tupletNormalType } = opts;
   let xml = "";
 
   // A same-drum flam's grace note is tied into the main note (the Grid
@@ -2221,7 +2525,7 @@ function buildNoteXml(step, opts) {
 
   xml += "      <note>\n";
   xml += unpitchedXml(step.drum);
-  xml += "        <duration>" + durationTicks + "</duration>\n";
+  xml += "        <duration>" + Math.round(durationTicks * XML_TICK_SCALE) + "</duration>\n";
   if (step.ornament === "flam" && graceTied) xml += "        <tie type=\"stop\"/>\n";
   xml += instrumentXml(step.drum);
   xml += "        <voice>1</voice>\n";
@@ -2236,6 +2540,7 @@ function buildNoteXml(step, opts) {
   xml += "        <stem>up</stem>\n";
   if (beamLevel1) xml += "        <beam number=\"1\">" + beamLevel1 + "</beam>\n";
   if (beamLevel2) xml += "        <beam number=\"2\">" + beamLevel2 + "</beam>\n";
+  if (beamLevel3) xml += "        <beam number=\"3\">" + beamLevel3 + "</beam>\n";
 
   const notationParts = [];
   if (step.ornament === "flam") notationParts.push(graceTied ? "          <tied type=\"stop\"/>\n" : "          <slur type=\"stop\" number=\"1\"/>\n");
@@ -2264,8 +2569,23 @@ function buildNoteXml(step, opts) {
     xml += "        <notations>\n" + notationParts.join("") + "        </notations>\n";
   }
 
-  xml += "        <lyric default-y=\"-55\">\n          <syllabic>single</syllabic>\n          <text>" + step.hand + "</text>\n        </lyric>\n";
+  // A double stop is both hands at once, so it gets no sticking letter.
+  if (!step.stop) xml += "        <lyric default-y=\"-55\">\n          <syllabic>single</syllabic>\n          <text>" + step.hand + "</text>\n        </lyric>\n";
   xml += "      </note>\n";
+  if (step.stop) {
+    // The second drum of a double stop: a chord note on the same stem.
+    xml += "      <note>\n        <chord/>\n";
+    xml += unpitchedXml(step.stop.drum);
+    xml += "        <duration>" + Math.round(durationTicks * XML_TICK_SCALE) + "</duration>\n";
+    xml += instrumentXml(step.stop.drum);
+    xml += "        <voice>1</voice>\n        <type>" + xmlType + "</type>\n";
+    if (isTriplet) {
+      xml += "        <time-modification>\n          <actual-notes>" + (tupletActual || 3) + "</actual-notes>\n          <normal-notes>" + (tupletNormal || 2) + "</normal-notes>\n";
+      if (tupletNormalType) xml += "          <normal-type>" + tupletNormalType + "</normal-type>\n";
+      xml += "        </time-modification>\n";
+    }
+    xml += "        <stem>up</stem>\n      </note>\n";
+  }
   return xml;
 }
 
@@ -2281,7 +2601,7 @@ function buildGridMeasureXml(measureNumber, measureSteps, subdivision) {
   let xml = "    <measure number=\"" + measureNumber + "\">\n";
   if (measureNumber === 1) {
     xml += "      <attributes>\n";
-    xml += "        <divisions>" + divisions + "</divisions>\n";
+    xml += "        <divisions>" + divisions * XML_TICK_SCALE + "</divisions>\n";
     xml += "        <clef>\n          <sign>percussion</sign>\n        </clef>\n";
     xml += "        <staff-details>\n          <staff-lines>5</staff-lines>\n        </staff-details>\n";
     xml += "        <time>\n          <beats>4</beats>\n          <beat-type>4</beat-type>\n        </time>\n";
@@ -2345,7 +2665,7 @@ function buildGridMeasureXml(measureNumber, measureSteps, subdivision) {
           const tupletGroupId = i + "-" + tupletGroupCounter;
           notes.push({ kind: "tuplet", trueBeat, tupletGroupId, step: sn });
         } else {
-          notes.push({ kind: "plain", trueBeat, posInGroup: 0, step: sn });
+          notes.push({ kind: "plain", trueBeat, posInGroup: 0, step: sn, own: !!sn.roll });
         }
         cumulativeTicks += sn.ticks;
       });
@@ -2373,8 +2693,10 @@ function buildGridMeasureXml(measureNumber, measureSteps, subdivision) {
   // inside the same tuplet bracket as its 16th "single" notes, so the type
   // itself - not just the tuplet group - has to be part of the secondary-
   // beam run key, or a type change mid-bracket wouldn't break the run.
-  const noteXmlType = (n) => (n.kind === "tuplet" ? (n.step.xmlType || "16th") : xmlType);
-  const beam2KeyOf = (n) => (n.kind === "tuplet" ? "tup:" + n.tupletGroupId : "plain") + ":" + noteXmlType(n);
+  // Scrape-roll notes (own) print their own value: 32nds for a scrape.
+  const noteXmlType = (n) => (n.kind === "tuplet" ? (n.step.xmlType || "16th") : (n.own && n.step.xmlType) || xmlType);
+  // 16ths and 32nds share the secondary beam; the 32nds add a third.
+  const beam2KeyOf = (n) => (n.kind === "tuplet" ? "tup:" + n.tupletGroupId : "plain") + ":" + (noteXmlType(n) === "32nd" ? "16th" : noteXmlType(n));
   const sameBeam2Run = (a, b) => !!a && !!b && a.trueBeat === b.trueBeat && beam2KeyOf(a) === beam2KeyOf(b);
   notes.forEach((n, idx) => {
     const prev = notes[idx - 1];
@@ -2384,7 +2706,12 @@ function buildGridMeasureXml(measureNumber, measureSteps, subdivision) {
     // A run cut down to a single note (both neighbors differ) isn't
     // beamable at all - no beam data renders it as a plain flagged note.
     n.beam1 = (beam1Start && beam1End) ? null : beam1Start ? "begin" : beam1End ? "end" : "continue";
-    if (isTriplet || noteXmlType(n) !== "16th") {
+    const is32 = (x) => !!x && x.trueBeat === n.trueBeat && noteXmlType(x) === "32nd";
+    if (is32(n)) {
+      const b3s = !is32(prev), b3e = !is32(next);
+      n.beam3 = b3s && b3e ? "backward hook" : b3s ? "begin" : b3e ? "end" : "continue";
+    }
+    if (isTriplet || (noteXmlType(n) !== "16th" && noteXmlType(n) !== "32nd")) {
       // Piece-wide eighth-note-triplet mode, or a note printed coarser
       // than a 16th (Ten Stroke Roll's eighth "doubles"): one flag, no
       // secondary beam level to draw regardless.
@@ -2468,7 +2795,10 @@ function buildGridMeasureXml(measureNumber, measureSteps, subdivision) {
     } else {
       const tupletStart = isTriplet && n.posInGroup === 0;
       const tupletStop = isTriplet && n.posInGroup === groupSize - 1;
-      xml += buildNoteXml(n.step, { xmlType, durationTicks, isTriplet, beamLevel1: n.beam1, beamLevel2: n.beam2, tupletStart, tupletStop });
+      xml += buildNoteXml(n.step, {
+        xmlType: noteXmlType(n), durationTicks: n.own ? n.step.ticks : durationTicks, isTriplet,
+        beamLevel1: n.beam1, beamLevel2: n.beam2, beamLevel3: n.beam3, tupletStart, tupletStop,
+      });
     }
   });
 
@@ -2483,7 +2813,7 @@ function buildGridMeasureXml(measureNumber, measureSteps, subdivision) {
 // 1-bar count-in before the pattern repeats.
 function buildReleaseMeasureXml(measureNumber, subdivision) {
   const divisions = DIVISIONS;
-  const quarterTicks = divisions; // one quarter note = `divisions` ticks, by definition
+  const quarterTicks = divisions * XML_TICK_SCALE; // one quarter note, in written ticks
 
   let xml = "    <measure number=\"" + measureNumber + "\">\n";
   if (measureNumber > 1 && (measureNumber - 1) % mwPerLine() === 0) {
@@ -3115,9 +3445,12 @@ function renderDrumPathGroup() {
   group.innerHTML = "";
   Object.keys(DRUM_PATHS).forEach((key) => {
     const cell = document.createElement("div");
-    cell.className = "tog" + (state.drumPath === key ? " on" : "");
+    const off = key === "spock" && state.drumCount === 4;
+    cell.className = "tog" + (state.drumPath === key ? " on" : "") + (off ? " disabled" : "");
     cell.textContent = DRUM_PATHS[key].label;
+    if (off) cell.title = "Needs 5 or 6 drums (spocks)";
     cell.addEventListener("click", () => {
+      if (off) return;
       state.drumPath = key;
       syncDrumUI();
       generateAndRender();
@@ -3173,7 +3506,8 @@ function syncDrumUI() {
   document.querySelectorAll("#aroundDirGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.aroundDir === state.aroundDir));
   document.querySelectorAll("#pathCycleGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.cycle === state.pathCycle));
   const spockRow = document.getElementById("spockPathRow");
-  const spockApplies = state.drumCount > 4 && !["single", "custom"].includes(state.drumPath);
+  const spockApplies = state.drumCount > 4 && !["single", "custom", "frontPair", "spock"].includes(state.drumPath);
+  document.getElementById("freeMovementToggle").checked = state.freeMovement;
   spockRow.classList.toggle("controls-disabled", !spockApplies);
   document.getElementById("includeSpocksToggle").checked = state.includeSpocks;
   document.querySelectorAll("#flamVoicingGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.flamVoicing === state.flamVoicing));
@@ -3184,6 +3518,7 @@ function syncDrumUI() {
 document.querySelectorAll("#drumCountGroup .tog").forEach((btn) => {
   btn.addEventListener("click", () => {
     state.drumCount = parseInt(btn.dataset.drums, 10);
+    if (state.drumPath === "spock" && state.drumCount === 4) state.drumPath = "insideOut"; // spocks need 5-6 drums
     syncDrumUI();
     generateAndRender();
   });
@@ -3242,8 +3577,24 @@ function syncCrossScrapeUI() {
   document.querySelectorAll("#scrapeTypeGroup .tog").forEach((b) => b.classList.toggle("on", b.dataset.scrapeType === "single" ? state.scrapeSingle : state.scrapeDouble));
   document.querySelectorAll("#scrapeDirGroup .tog").forEach((b) => b.classList.toggle("on", state.scrapeDirs.has(b.dataset.scrapeDir)));
   document.getElementById("scrapeCrossToggle").checked = state.scrapeCrosses;
+  // Crossed options only work with Crosses on (the master switch).
+  document.getElementById("scrapeCrossToggle").closest(".voice-toggle-row").classList.toggle("controls-disabled", !state.crossEnabled);
   document.getElementById("scrapeDensitySlider").value = state.scrapeDensity;
   document.getElementById("scrapeDensityVal").textContent = state.scrapeDensity + "%";
+
+  const rollOk = state.subdivision === "sixteenth";
+  document.getElementById("rollToggle").checked = state.rollEnabled;
+  document.getElementById("rollDetailControl").classList.toggle("controls-disabled", !state.rollEnabled || !rollOk);
+  document.querySelectorAll("#rollTypeGroup .tog").forEach((b) => b.classList.toggle("on", state.rollTypes.has(b.dataset.rollType)));
+  document.getElementById("rollDensitySlider").value = state.rollDensity;
+  document.getElementById("rollDensityVal").textContent = state.rollDensity + "%";
+
+  document.getElementById("stopToggle").checked = state.stopEnabled;
+  document.getElementById("stopDetailControl").classList.toggle("controls-disabled", !state.stopEnabled);
+  document.getElementById("stopCrossToggle").checked = state.stopCrossed;
+  document.getElementById("stopCrossToggle").closest(".voice-toggle-row").classList.toggle("controls-disabled", !state.crossEnabled);
+  document.getElementById("stopDensitySlider").value = state.stopDensity;
+  document.getElementById("stopDensityVal").textContent = state.stopDensity + "%";
 }
 document.getElementById("crossToggle").addEventListener("change", (e) => { state.crossEnabled = e.target.checked; syncCrossScrapeUI(); generateAndRender(); });
 document.querySelectorAll("#crossUnitGroup .tog").forEach((b) => b.addEventListener("click", () => {
@@ -3279,12 +3630,35 @@ document.getElementById("scrapeDensitySlider").addEventListener("input", (e) => 
 });
 document.getElementById("scrapeDensitySlider").addEventListener("change", () => generateAndRender());
 
+// ── Free movement, Scrape Rolls, Double Stops ──
+document.getElementById("freeMovementToggle").addEventListener("change", (e) => { state.freeMovement = e.target.checked; generateAndRender(); });
+document.getElementById("rollToggle").addEventListener("change", (e) => { state.rollEnabled = e.target.checked; syncCrossScrapeUI(); generateAndRender(); });
+document.querySelectorAll("#rollTypeGroup .tog").forEach((b) => b.addEventListener("click", () => {
+  const id = b.dataset.rollType;
+  if (state.rollTypes.has(id)) { if (state.rollTypes.size > 1) state.rollTypes.delete(id); }
+  else state.rollTypes.add(id);
+  syncCrossScrapeUI(); generateAndRender();
+}));
+document.getElementById("rollDensitySlider").addEventListener("input", (e) => {
+  state.rollDensity = parseInt(e.target.value, 10);
+  document.getElementById("rollDensityVal").textContent = state.rollDensity + "%";
+});
+document.getElementById("rollDensitySlider").addEventListener("change", () => generateAndRender());
+document.getElementById("stopToggle").addEventListener("change", (e) => { state.stopEnabled = e.target.checked; syncCrossScrapeUI(); generateAndRender(); });
+document.getElementById("stopCrossToggle").addEventListener("change", (e) => { state.stopCrossed = e.target.checked; generateAndRender(); });
+document.getElementById("stopDensitySlider").addEventListener("input", (e) => {
+  state.stopDensity = parseInt(e.target.value, 10);
+  document.getElementById("stopDensityVal").textContent = state.stopDensity + "%";
+});
+document.getElementById("stopDensitySlider").addEventListener("change", () => generateAndRender());
+
 // ── Subdivision toggle ──
 document.querySelectorAll("#subdivisionGroup .tog").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll("#subdivisionGroup .tog").forEach((b) => b.classList.remove("on"));
     btn.classList.add("on");
     state.subdivision = btn.dataset.subdivision;
+    syncCrossScrapeUI(); // scrape rolls are 16th-only
     // Position sets were defined against the old grid resolution - clamp
     // them into range for the new one rather than leaving stale indices.
     const n = stepsPerMeasureFor(state.subdivision);
@@ -3605,6 +3979,7 @@ function triggerGridStep(step, time) {
   } else {
     triggerStroke(time, mainVelocity, step.drum);
   }
+  if (step.stop) triggerStroke(time, mainVelocity, step.stop.drum); // double stop: both hands together
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -3848,6 +4223,13 @@ function serializeSettings() {
     scrapeDouble: state.scrapeDouble,
     scrapeCrosses: state.scrapeCrosses,
     scrapeDirs: Array.from(state.scrapeDirs),
+    freeMovement: state.freeMovement,
+    rollEnabled: state.rollEnabled,
+    rollDensity: state.rollDensity,
+    rollTypes: Array.from(state.rollTypes),
+    stopEnabled: state.stopEnabled,
+    stopDensity: state.stopDensity,
+    stopCrossed: state.stopCrossed,
   };
 }
 
@@ -3885,6 +4267,14 @@ function restoreSettingsFromUrl() {
     if (!state.scrapeSingle && !state.scrapeDouble) state.scrapeSingle = state.scrapeDouble = true;
     state.scrapeCrosses = bool(s.scrapeCrosses, false);
     state.scrapeDirs = pick(s.scrapeDirs, ALL_SCRAPE_DIRS, ALL_SCRAPE_DIRS);
+    state.freeMovement = bool(s.freeMovement, false);
+    state.rollEnabled = bool(s.rollEnabled, false);
+    state.rollDensity = pct(s.rollDensity, 25);
+    state.rollTypes = pick(s.rollTypes, ["oneOne", "twoTwo"], ["oneOne", "twoTwo"]);
+    state.stopEnabled = bool(s.stopEnabled, false);
+    state.stopDensity = pct(s.stopDensity, 20);
+    state.stopCrossed = bool(s.stopCrossed, false);
+    if (!DRUM_PATHS[state.drumPath] || (state.drumPath === "spock" && state.drumCount === 4)) state.drumPath = "insideOut";
     return true;
   } catch (err) {
     console.error("Failed to parse shared settings:", err);
